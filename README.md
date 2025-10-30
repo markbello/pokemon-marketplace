@@ -13,11 +13,10 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Future Mobile**: Capacitor integration planned for native apps
 - **Authentication**: NextAuth.js
 - **Database**: PostgreSQL with Prisma ORM
 - **Payments**: Stripe Connect for marketplace transactions
-- **Hosting**: Vercel for web, app stores for mobile
+- **Hosting**: Vercel
 
 ## 📱 Getting Started
 
@@ -45,22 +44,7 @@ npm run db:migrate
 
 # Start development server
 npm run dev
-\`\`\`
-
-### Mobile Development
-\`\`\`bash
-# Build for mobile
-npm run build
-
-# Add platforms
-npx cap add ios
-npx cap add android
-
-# Sync and open in IDE
-npx cap sync
-npx cap open ios
-npx cap open android
-\`\`\`
+```
 
 ## 📋 Development Workflow
 
@@ -82,23 +66,7 @@ npx cap open android
 ## 📞 Support
 
 For questions or issues, please create a ticket in our [Jira project](https://pokemonmarketplace.atlassian.net) or reach out in the #dev Slack channel.
-\`\`\`
 
-## ✅ Acceptance Criteria Checklist
+## 🤝 Contributing
 
-- [ ] Repository created and initialized
-- [ ] Branch protection rules configured
-- [ ] Team members added with appropriate permissions
-- [ ] Labels created and organized
-- [ ] GitHub-Jira integration configured
-- [ ] GitHub-Slack integration set up
-- [ ] README, .gitignore, and basic structure created
-- [ ] Issue and PR templates added
-- [ ] Repository settings optimized
-
-## 🔄 Next Steps After PM-3
-
-Once this task is complete, you'll be ready for:
-- **PM-5**: Set up development environment and NextJS project structure
-- **PM-8**: Set up CI/CD pipeline with GitHub Actions
-- **PM-14**: Establish team workflow and development processes
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our development process, coding standards, and how to submit pull requests.
