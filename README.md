@@ -21,13 +21,15 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 ## 📱 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn
 - PostgreSQL database
 - Stripe account
 
 ### Installation
-\`\`\`bash
+
+```bash
 # Clone the repository
 git clone https://github.com/markbello/pokemon-marketplace.git
 cd pokemon-marketplace
@@ -44,7 +46,17 @@ npm run db:migrate
 
 # Start development server
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 ## 📋 Development Workflow
 
@@ -70,3 +82,20 @@ For questions or issues, please create a ticket in our [Jira project](https://po
 ## 🤝 Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our development process, coding standards, and how to submit pull requests.
+
+## 📚 Learn More
+
+To learn more about Next.js and the technologies used in this project:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial
+- [Next.js GitHub repository](https://github.com/vercel/next.js) - feedback and contributions welcome
+- [NextAuth.js Documentation](https://next-auth.js.org/) - authentication for Next.js
+- [Prisma Documentation](https://www.prisma.io/docs) - modern database toolkit
+- [Stripe Connect Documentation](https://stripe.com/docs/connect) - marketplace payments
+
+## 🚀 Deployment
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new) from the creators of Next.js.
+
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
