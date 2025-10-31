@@ -1,10 +1,13 @@
 ## 📋 Pull Request Summary
+
 Brief description of what this PR does.
 
 ## 🔗 Related Issue
+
 Closes #[issue number]
 
 ## 🔄 Type of Change
+
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Enhancement (improvement to existing functionality)
@@ -12,6 +15,7 @@ Closes #[issue number]
 - [ ] Documentation update
 
 ## ✅ Testing
+
 - [ ] Tests pass locally
 - [ ] New tests added for new functionality
 - [ ] Manual testing completed
@@ -19,9 +23,11 @@ Closes #[issue number]
 - [ ] Mobile testing (if applicable)
 
 ## 📸 Screenshots/Demo
+
 If applicable, add screenshots or GIFs demonstrating the changes.
 
 ## 📋 Checklist
+
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -31,15 +37,19 @@ If applicable, add screenshots or GIFs demonstrating the changes.
 - [ ] New and existing unit tests pass locally with my changes
 
 ## 🏷️ Labels Applied
+
 - [ ] Priority matches related issue
 - [ ] Type matches change type
 - [ ] Component labels applied for affected areas
-- [ ] Status set to `ready-for-review` 
+- [ ] Status set to `ready-for-review`
 
 ## 📝 Additional Notes
+
 Any additional information reviewers should know.
 
 ## 🔍 Review Focus Areas
+
 What should reviewers pay special attention to?
+
 - Area 1
 - Area 2
