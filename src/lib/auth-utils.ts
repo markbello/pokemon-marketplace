@@ -48,4 +48,3 @@ export function shouldBypassProfileCheck(pathname: string): boolean {
 
   return bypassRoutes.some((route) => pathname.startsWith(route));
 }
-

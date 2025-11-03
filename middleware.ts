@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // If there's an error checking the session, continue normally
     // This prevents blocking the app if there's an Auth0 issue
     // Don't log errors in production to avoid noise
