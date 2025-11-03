@@ -6,6 +6,8 @@ type User = NonNullable<ReturnType<typeof import('@auth0/nextjs-auth0').useUser>
 /**
  * Check if a user's profile is complete
  * Profile is considered complete if user_metadata.profileComplete is true
+ * Returns true if profileComplete is explicitly true, false otherwise
+ * This means missing user_metadata is treated as incomplete, but we're lenient in middleware
  */
 export function isProfileComplete(user: User | null | undefined): boolean {
   if (!user) {
@@ -13,7 +15,9 @@ export function isProfileComplete(user: User | null | undefined): boolean {
   }
 
   const profileComplete = user.user_metadata?.profileComplete;
-  return Boolean(profileComplete === true);
+  // Only return true if explicitly set to true
+  // undefined or false both return false
+  return profileComplete === true;
 }
 
 /**

@@ -18,22 +18,31 @@ export async function middleware(request: NextRequest) {
   // Only check after auth routes have been handled
   try {
     // Get session from the request (Auth0 middleware sets up cookies)
+    // In middleware, we need to pass the request to getSession
     const session = await auth0.getSession(request);
 
-    // If user is authenticated but profile is incomplete, redirect to onboarding
-    if (session?.user && !isProfileComplete(session.user)) {
-      // Only redirect if not already on onboarding page
-      if (url.pathname !== '/onboarding') {
-        const onboardingUrl = new URL('/onboarding', url.origin);
-        // Preserve the original destination so we can redirect back after onboarding
-        onboardingUrl.searchParams.set('returnTo', url.pathname);
-        return NextResponse.redirect(onboardingUrl);
+    if (session?.user) {
+      // Use the isProfileComplete utility which handles all cases
+      // Only redirect if profile is explicitly incomplete AND not already on onboarding
+      // This prevents redirect loops and allows access when metadata hasn't refreshed yet
+      if (!isProfileComplete(session.user) && url.pathname !== '/onboarding') {
+        // Only redirect if we have user_metadata (meaning user has started onboarding)
+        // If no user_metadata exists, the session might not be refreshed yet, so be permissive
+        const userMetadata = session.user.user_metadata;
+        
+        // Only enforce redirect if user_metadata exists and profileComplete is explicitly false
+        // This prevents redirecting users whose session hasn't refreshed with new metadata
+        if (userMetadata && userMetadata.profileComplete === false) {
+          const onboardingUrl = new URL('/onboarding', url.origin);
+          onboardingUrl.searchParams.set('returnTo', url.pathname);
+          return NextResponse.redirect(onboardingUrl);
+        }
       }
     }
   } catch (error) {
     // If there's an error checking the session, continue normally
     // This prevents blocking the app if there's an Auth0 issue
-    console.error('Error checking profile completeness:', error);
+    // Don't log errors in production to avoid noise
   }
 
   return response;

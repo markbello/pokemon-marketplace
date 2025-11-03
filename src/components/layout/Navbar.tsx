@@ -14,7 +14,6 @@ export default function Navbar() {
             height={130}
             className="h-10 w-auto"
             priority
-            quality={100}
           />
         </Link>
         <UserMenu />
