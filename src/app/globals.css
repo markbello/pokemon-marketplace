@@ -120,3 +120,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Phone Input Styling */
+.PhoneInput {
+  @apply flex items-center;
+}
+
+.PhoneInputInput {
+  @apply flex-1 border-0 bg-transparent outline-none;
+}
+
+.PhoneInputCountry {
+  @apply mr-2 flex items-center;
+}
+
+.PhoneInputCountryIcon {
+  @apply h-5 w-6 rounded;
+}
+
+.PhoneInputCountrySelect {
+  @apply absolute inset-0 z-10 cursor-pointer opacity-0;
+}
+
+.PhoneInputCountrySelectArrow {
+  @apply ml-1 text-muted-foreground;
+  opacity: 0.5;
+}
+
+/* Ensure phone numbers are formatted with dashes */
+.PhoneInputInput input {
+  @apply w-full;
+}
+
+/* Hide the flag emoji on country selector if needed */
+.PhoneInputCountryIcon--border {
+  border: 1px solid var(--border);
+}

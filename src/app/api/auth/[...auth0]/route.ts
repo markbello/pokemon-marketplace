@@ -1,6 +1,5 @@
 import { auth0 } from '@/lib/auth0';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
 
 // In v4, the middleware handles auth routes
 // This route handler just needs to delegate to the middleware

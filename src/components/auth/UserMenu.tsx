@@ -31,7 +31,10 @@ export default function UserMenu() {
     );
   }
 
-  const userInitials = user.name
+  // Use displayName from user_metadata if available, otherwise fall back to name
+  const displayName = user.user_metadata?.displayName || user.nickname || user.name;
+  
+  const userInitials = displayName
     ?.split(' ')
     .map((n) => n[0])
     .join('')
@@ -43,7 +46,7 @@ export default function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
           <Avatar>
-            <AvatarImage src={user.picture || undefined} alt={user.name || 'User'} />
+            <AvatarImage src={user.picture || undefined} alt={displayName || 'User'} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
         </button>
@@ -51,8 +54,8 @@ export default function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
-            {user.email && (
+            <p className="text-sm font-medium leading-none">{displayName || 'User'}</p>
+            {user.email && user.email !== displayName && (
               <p className="text-xs leading-none text-muted-foreground">
                 {user.email}
               </p>
@@ -62,9 +65,6 @@ export default function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profile">Profile</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/seller/dashboard">Seller Dashboard</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
