@@ -1,37 +1,28 @@
-import { auth0 } from '@/lib/auth0';
-import LoginButton from '@/components/LoginButton';
-import LogoutButton from '@/components/LogoutButton';
-import Profile from '@/components/Profile';
-
 export default async function Home() {
-  const session = await auth0.getSession();
-  const user = session?.user;
-
   return (
-    <div className="app-container">
-      <div className="main-card-wrapper">
-        <img
-          src="https://cdn.auth0.com/website/auth0-logo-dark.svg"
-          alt="Auth0 Logo"
-          className="auth0-logo"
-        />
-        <h1 className="main-title">Next.js + Auth0</h1>
-
-        <div className="action-card">
-          {user ? (
-            <div className="logged-in-section">
-              <p className="logged-in-message">✅ Successfully logged in!</p>
-              <Profile />
-              <LogoutButton />
-            </div>
-          ) : (
-            <>
-              <p className="action-text">
-                Welcome! Please log in to access your protected content.
-              </p>
-              <LoginButton />
-            </>
-          )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl">
+        <h1 className="mb-6 text-4xl font-bold">Welcome to Pokemon Marketplace</h1>
+        <p className="text-muted-foreground mb-8 text-lg">
+          Buy and sell Pokemon cards with ease. Browse our marketplace or start selling today!
+        </p>
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-lg border bg-card p-6">
+            <h2 className="mb-2 text-2xl font-semibold">Browse Cards</h2>
+            <p className="mb-4 text-muted-foreground">
+              Explore our collection of Pokemon cards from sellers around the world.
+            </p>
+            <p className="text-sm text-muted-foreground">Coming soon...</p>
+          </div>
+          
+          <div className="rounded-lg border bg-card p-6">
+            <h2 className="mb-2 text-2xl font-semibold">Start Selling</h2>
+            <p className="mb-4 text-muted-foreground">
+              List your Pokemon cards and reach buyers worldwide.
+            </p>
+            <p className="text-sm text-muted-foreground">Coming soon...</p>
+          </div>
         </div>
       </div>
     </div>

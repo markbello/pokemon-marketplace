@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Auth0Provider } from '@auth0/nextjs-auth0';
+import Navbar from '@/components/layout/Navbar';
 import './globals.css';
 
 const geistSans = Geist({
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Auth0 Next.js App',
-  description: 'Next.js app with Auth0 authentication',
+  title: 'Pokemon Marketplace',
+  description: 'Buy and sell Pokemon cards',
 };
 
 export default function RootLayout({
@@ -26,7 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Auth0Provider>{children}</Auth0Provider>
+        <Auth0Provider>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </div>
+        </Auth0Provider>
       </body>
     </html>
   );
