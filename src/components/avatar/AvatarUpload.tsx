@@ -299,6 +299,7 @@ export function AvatarUpload({
         {previewUrl ? (
           <div className="relative w-full p-6">
             <div className="border-background relative mx-auto aspect-square w-48 overflow-hidden rounded-full border-4 shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={previewUrl} alt="Avatar preview" className="h-full w-full object-cover" />
               {isUploading && (
                 <div className="bg-background/80 absolute inset-0 flex items-center justify-center">

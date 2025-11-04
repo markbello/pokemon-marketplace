@@ -1,12 +1,21 @@
 import { auth0 } from '@/lib/auth0';
 import { avatarService } from '@/lib/avatar-service';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+
+// Type for in-memory rate limiting (simple implementation for development)
+interface RateLimitStore {
+  [key: string]: number;
+}
+
+declare global {
+  var avatarUploadRateLimit: RateLimitStore | undefined;
+}
 
 /**
  * Generate signed upload signature for Cloudinary
  * GET /api/avatar/upload-signature
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verify authentication
     const session = await auth0.getSession();
@@ -23,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Only enable rate limiting in production to avoid blocking development/testing
     if (process.env.NODE_ENV === 'production') {
       const rateLimitKey = `avatar_upload_${session.user.sub}`;
-      const lastUpload = (global as any).avatarUploadRateLimit?.[rateLimitKey];
+      const lastUpload = global.avatarUploadRateLimit?.[rateLimitKey];
       const now = Date.now();
       const oneMinute = 60 * 1000;
 
@@ -35,10 +44,10 @@ export async function GET(request: NextRequest) {
       }
 
       // Update rate limit
-      if (!(global as any).avatarUploadRateLimit) {
-        (global as any).avatarUploadRateLimit = {};
+      if (!global.avatarUploadRateLimit) {
+        global.avatarUploadRateLimit = {};
       }
-      (global as any).avatarUploadRateLimit[rateLimitKey] = now;
+      global.avatarUploadRateLimit[rateLimitKey] = now;
     }
 
     // Generate signed upload parameters

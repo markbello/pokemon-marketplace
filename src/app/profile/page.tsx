@@ -255,16 +255,6 @@ export default function ProfilePage() {
   // Only check profile completeness after user data is loaded to avoid flash
   const profileComplete = isLoadingUserData ? true : metadata?.profileComplete || false;
 
-  const userInitials =
-    displayUser?.name
-      ?.split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) ||
-    displayUser?.email?.[0].toUpperCase() ||
-    'U';
-
   const handleAvatarUpload = async (publicId: string, secureUrl: string) => {
     // Avatar is already saved via the API endpoint, just update local state
     setCurrentAvatarUrl(secureUrl);
