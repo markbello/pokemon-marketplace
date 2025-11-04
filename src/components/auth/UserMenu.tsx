@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@auth0/nextjs-auth0';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +11,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/avatar/UserAvatar';
 import Link from 'next/link';
 
 export default function UserMenu() {
   const { user, isLoading } = useUser();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const [freshUserData, setFreshUserData] = useState<typeof user | null>(null);
+  const [hasLoadedFreshData, setHasLoadedFreshData] = useState(false);
 
   // Track when we've completed the initial auth check to prevent flash
   // Only update state when loading completes (isLoading transitions from true to false)
@@ -30,6 +32,40 @@ export default function UserMenu() {
       return () => cancelAnimationFrame(rafId);
     }
   }, [isLoading, hasCheckedAuth]);
+
+  // Fetch fresh user data from Management API to get latest user_metadata (including avatar)
+  // This ensures we get the most up-to-date avatar even if the session hasn't refreshed
+  useEffect(() => {
+    if (user?.sub) {
+      const fetchFreshData = async () => {
+        try {
+          // Add a cache-busting parameter to ensure we get fresh data
+          const response = await fetch(`/api/user/me?t=${Date.now()}`);
+          if (response.ok) {
+            const data = await response.json();
+            setFreshUserData(data.user);
+          }
+        } catch (error) {
+          // Silently fail - fall back to session user data
+          console.error('Failed to fetch fresh user data:', error);
+        } finally {
+          setHasLoadedFreshData(true);
+        }
+      };
+
+      fetchFreshData();
+
+      // Refetch on window focus (happens after router.refresh() and page navigation)
+      const handleFocus = () => {
+        fetchFreshData();
+      };
+      window.addEventListener('focus', handleFocus);
+
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, [user?.sub]);
 
   // Show loading skeleton until auth state is confirmed
   if (isLoading || !hasCheckedAuth) {
@@ -45,35 +81,45 @@ export default function UserMenu() {
     );
   }
 
-  // Use displayName from user_metadata if available, otherwise fall back to name
-  const displayName = user.user_metadata?.displayName || user.nickname || user.name;
+  // Show skeleton while loading fresh data to check for avatar
+  if (!hasLoadedFreshData) {
+    return <div className="bg-muted border-border h-10 w-10 rounded-full border" />;
+  }
 
-  const userInitials =
-    displayName
-      ?.split(' ')
-      .map((n: string) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) ||
-    user.email?.[0].toUpperCase() ||
-    'U';
+  // Use fresh user data if available (from Management API), otherwise fall back to session user
+  // This ensures we get the latest avatar data even if the session hasn't refreshed
+  const displayUser = freshUserData || user;
+
+  // Use displayName from user_metadata if available, otherwise fall back to name
+  const displayName =
+    displayUser?.user_metadata?.displayName || displayUser?.nickname || displayUser?.name;
+
+  // Get avatar data from user_metadata
+  const avatarData = displayUser?.user_metadata?.avatar;
+  const avatarPublicId = avatarData?.public_id;
+  const avatarUrl = avatarData?.secure_url;
+
+  // Only show initials if we've confirmed there's no avatar
+  const hasAvatar = avatarPublicId || avatarUrl;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="border-border focus:ring-ring relative flex h-10 w-10 items-center justify-center rounded-full border focus:ring-2 focus:ring-offset-2 focus:outline-none">
-          <Avatar>
-            <AvatarImage src={user.picture || undefined} alt={displayName || 'User'} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
+        <button className="border-border focus:ring-ring relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border transition-opacity hover:opacity-80 focus:ring-2 focus:ring-offset-2 focus:outline-none">
+          <UserAvatar
+            publicId={avatarPublicId}
+            avatarUrl={avatarUrl || displayUser?.picture || undefined}
+            name={hasAvatar ? undefined : displayName || undefined}
+            size="small"
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm leading-none font-medium">{displayName || 'User'}</p>
-            {user.email && user.email !== displayName && (
-              <p className="text-muted-foreground text-xs leading-none">{user.email}</p>
+            {displayUser?.email && displayUser.email !== displayName && (
+              <p className="text-muted-foreground text-xs leading-none">{displayUser.email}</p>
             )}
           </div>
         </DropdownMenuLabel>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useUser } from '@auth0/nextjs-auth0';
 import { basicProfileSchema, type BasicProfileFormData } from '@/lib/validations';
 import {
   Form,
@@ -16,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { AvatarUpload } from '@/components/avatar/AvatarUpload';
+import { getAvatarUrl } from '@/lib/avatar-utils';
 
 interface BasicProfileStepProps {
   initialData?: Partial<BasicProfileFormData>;
@@ -24,9 +28,28 @@ interface BasicProfileStepProps {
 }
 
 export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfileStepProps) {
+  const router = useRouter();
+  const { user } = useUser();
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
+
+  // Get current avatar URL from user metadata
+  useEffect(() => {
+    if (user?.user_metadata?.avatar) {
+      const avatar = user.user_metadata.avatar;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+
+      if (avatar.public_id) {
+        setCurrentAvatarUrl(
+          getAvatarUrl(avatar.public_id, cloudName, 'large') || avatar.secure_url || null,
+        );
+      } else if (avatar.secure_url) {
+        setCurrentAvatarUrl(avatar.secure_url);
+      }
+    }
+  }, [user]);
 
   const form = useForm<BasicProfileFormData>({
     resolver: zodResolver(basicProfileSchema),
@@ -133,87 +156,111 @@ export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfile
     }
   };
 
+  const handleAvatarUpload = (publicId: string, secureUrl: string) => {
+    // Avatar is already saved via the API endpoint, just update local state
+    setCurrentAvatarUrl(secureUrl);
+
+    // Trigger Next.js router refresh to revalidate and update all components
+    router.refresh();
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>First Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your first name" {...field} disabled={isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="space-y-6">
+          <div>
+            <FormLabel className="mb-4 block">
+              Profile Photo <span className="text-muted-foreground font-normal">(Optional)</span>
+            </FormLabel>
+            <AvatarUpload
+              currentAvatarUrl={currentAvatarUrl}
+              onUploadComplete={handleAvatarUpload}
+              disabled={isSubmitting}
+            />
+            <p className="text-muted-foreground mt-2 text-xs">
+              Upload a photo to help other users recognize you. You can skip this and add one later.
+            </p>
+          </div>
 
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your last name" {...field} disabled={isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your first name" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="displayName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      placeholder="Choose a username"
-                      {...field}
-                      disabled={isSubmitting || isCheckingUsername}
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your last name" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="Choose a username"
+                        {...field}
+                        disabled={isSubmitting || isCheckingUsername}
+                      />
+                      {isCheckingUsername && (
+                        <Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-muted-foreground text-sm">
+                    3-20 characters, letters, numbers, and underscores only
+                  </p>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      disabled={isSubmitting}
+                      placeholder="(555) 123-4567"
+                      defaultCountry="US"
                     />
-                    {isCheckingUsername && (
-                      <Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-                <p className="text-muted-foreground text-sm">
-                  3-20 characters, letters, numbers, and underscores only
-                </p>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number (Optional)</FormLabel>
-                <FormControl>
-                  <PhoneInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    disabled={isSubmitting}
-                    placeholder="(555) 123-4567"
-                    defaultCountry="US"
-                  />
-                </FormControl>
-                <FormMessage />
-                <p className="text-muted-foreground text-sm">
-                  Recommended for order updates and security alerts
-                </p>
-              </FormItem>
-            )}
-          />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-muted-foreground text-sm">
+                    Recommended for order updates and security alerts
+                  </p>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <Button
