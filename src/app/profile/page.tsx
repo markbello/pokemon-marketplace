@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@auth0/nextjs-auth0';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Mail, Phone, User, Save, X } from 'lucide-react';
+import { Loader2, Mail, Phone, User, Save, X, Camera } from 'lucide-react';
+import { UserAvatar } from '@/components/avatar/UserAvatar';
+import { AvatarUploadModal } from '@/components/avatar/AvatarUploadModal';
+import { getAvatarUrl } from '@/lib/avatar-utils';
 import { getUserMetadata } from '@/lib/auth-utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +36,7 @@ import {
 } from '@/lib/validations';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, isLoading } = useUser();
   const [userData, setUserData] = useState<typeof user | null>(null);
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
@@ -41,10 +45,28 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [hasBasicChanges, setHasBasicChanges] = useState(false);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   // Use fetched user data if available, otherwise fall back to session user
   const displayUser = userData || user;
   const metadata = getUserMetadata(displayUser);
+
+  // Get current avatar URL from user metadata
+  useEffect(() => {
+    if (displayUser?.user_metadata?.avatar) {
+      const avatar = displayUser.user_metadata.avatar;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+      
+      if (avatar.public_id) {
+        setCurrentAvatarUrl(getAvatarUrl(avatar.public_id, cloudName, 'large') || avatar.secure_url || null);
+      } else if (avatar.secure_url) {
+        setCurrentAvatarUrl(avatar.secure_url);
+      }
+    } else {
+      setCurrentAvatarUrl(null);
+    }
+  }, [displayUser]);
 
   // Initialize form with current user data - MUST be called before any conditional returns
   const form = useForm<OnboardingFormData>({
@@ -233,15 +255,26 @@ export default function ProfilePage() {
   // Only check profile completeness after user data is loaded to avoid flash
   const profileComplete = isLoadingUserData ? true : metadata?.profileComplete || false;
 
-  const userInitials =
-    displayUser?.name
-      ?.split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) ||
-    displayUser?.email?.[0].toUpperCase() ||
-    'U';
+  const handleAvatarUpload = async (publicId: string, secureUrl: string) => {
+    // Avatar is already saved via the API endpoint, just update local state
+    setCurrentAvatarUrl(secureUrl);
+    
+    // Refresh user data to get updated metadata
+    try {
+      const meResponse = await fetch('/api/user/me');
+      if (meResponse.ok) {
+        const meData = await meResponse.json();
+        setUserData(meData.user);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+
+    // Trigger Next.js router refresh to revalidate and update all components
+    router.refresh();
+
+    toast.success('Avatar updated successfully');
+  };
 
   const handleSaveBasicInfo = async (data: BasicProfileFormData) => {
     setIsSubmitting(true);
@@ -417,13 +450,27 @@ export default function ProfilePage() {
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>Your account details and profile picture</CardDescription>
               </div>
-              <Avatar className="h-20 w-20">
-                <AvatarImage
-                  src={displayUser?.picture || undefined}
-                  alt={displayUser?.name || 'User'}
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="group relative cursor-pointer rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                aria-label="Edit profile photo"
+              >
+                <UserAvatar
+                  publicId={displayUser?.user_metadata?.avatar?.public_id}
+                  avatarUrl={currentAvatarUrl || displayUser?.user_metadata?.avatar?.secure_url || displayUser?.picture || undefined}
+                  name={metadata?.displayName || displayUser?.name || undefined}
+                  size="large"
                 />
-                <AvatarFallback className="text-lg">{userInitials}</AvatarFallback>
-              </Avatar>
+                {/* Hover overlay for desktop */}
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                {/* Always-visible camera badge for mobile/touch devices - hidden on hover */}
+                <div className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm opacity-100 transition-opacity duration-200 group-hover:opacity-0">
+                  <Camera className="h-4 w-4" />
+                </div>
+              </button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -755,6 +802,14 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Avatar Upload Modal */}
+        <AvatarUploadModal
+          open={isAvatarModalOpen}
+          onOpenChange={setIsAvatarModalOpen}
+          currentAvatarUrl={currentAvatarUrl}
+          onUploadComplete={handleAvatarUpload}
+        />
       </div>
     </div>
   );
