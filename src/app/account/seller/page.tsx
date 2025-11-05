@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useUser } from '@auth0/nextjs-auth0';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountLayout } from '@/components/account/AccountLayout';
@@ -22,7 +22,7 @@ interface SellerStatus {
   } | null;
 }
 
-export default function SellerDashboardPage() {
+function SellerDashboardContent() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -389,5 +389,32 @@ export default function SellerDashboardPage() {
         </Card>
       </div>
     </AccountLayout>
+  );
+}
+
+export default function SellerDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <AccountLayout>
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
+              <p className="text-muted-foreground">Manage your seller account and payments</p>
+            </div>
+            <Card>
+              <CardContent className="flex min-h-[400px] items-center justify-center">
+                <div className="text-center">
+                  <Loader2 className="text-muted-foreground mx-auto mb-4 h-8 w-8 animate-spin" />
+                  <p className="text-muted-foreground">Loading seller dashboard...</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </AccountLayout>
+      }
+    >
+      <SellerDashboardContent />
+    </Suspense>
   );
 }
