@@ -97,6 +97,14 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
+      payment_intent_data: {
+        description: `${order.description} - Order #${order.id.slice(-8)}`,
+        metadata: {
+          orderId: order.id,
+          userId: userId,
+          isTestPayment: 'true',
+        },
+      },
       metadata: {
         orderId: order.id,
         userId: userId,
@@ -105,6 +113,10 @@ export async function POST(request: Request) {
       success_url: `${baseUrl}/test-stripe/success?orderId=${order.id}`,
       cancel_url: `${baseUrl}/test-stripe`,
     });
+
+    console.log('[Test Payment] Created checkout session:', checkoutSession.id);
+    console.log('[Test Payment] Session metadata:', checkoutSession.metadata);
+    console.log('[Test Payment] Order ID:', order.id);
 
     // 7. Link Stripe session to our order
     await prisma.order.update({

@@ -7,8 +7,11 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 - **Secure Trading**: Escrow-protected transactions with buyer/seller verification
 - **Responsive Design**: Optimized for desktop, tablet, and mobile browsers
 - **Advanced Search**: Filter by set, rarity, condition, and price
-- **Authentication**: Secure user registration with role-based access
-- **Payment Processing**: Integrated payment system with seller payouts
+- **Authentication**: Secure user registration with role-based access (Auth0)
+- **Payment Processing**: Stripe integration with customer management and webhooks
+- **Order Management**: Complete order tracking with status updates and audit logging
+- **Account Management**: User profile, purchase history, and preferences pages
+- **Avatar Upload**: Cloudinary integration for user profile pictures
 
 ## 🛠️ Tech Stack
 
@@ -73,7 +76,12 @@ AUTH0_MANAGEMENT_CLIENT_SECRET="[get-from-team-lead]"
 # Database - Copied from .env.development.local (Vercel CLI output)
 DATABASE_URL="postgresql://[copied-from-vercel-output]"
 
-# Other environment variables...
+# Stripe Configuration (get from team lead)
+STRIPE_SECRET_KEY="sk_test_[get-from-team-lead]"
+STRIPE_WEBHOOK_SECRET="whsec_[get-from-team-lead]"
+
+# Cloudinary (for avatar uploads)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="[get-from-team-lead]"
 ```
 
 **Note**: Vercel automatically provides `DATABASE_URL` for preview and production deployments. Local development uses the staging database connection string.
@@ -91,7 +99,30 @@ npm run db:migrate -- --name init
 npm run db:seed
 ```
 
-#### 4. Start Development
+#### 4. Stripe Webhook Setup (for Local Testing)
+
+To test Stripe webhooks locally, you'll need the Stripe CLI:
+
+```bash
+# Install Stripe CLI (if not already installed)
+# macOS: brew install stripe/stripe-cli/stripe
+# Or download from: https://stripe.com/docs/stripe-cli
+
+# Login to Stripe CLI
+stripe login
+
+# Forward webhooks to your local server (run in a separate terminal)
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+This will output a webhook signing secret. Update your `.env.local` with:
+```bash
+STRIPE_WEBHOOK_SECRET="whsec_[from-stripe-cli-output]"
+```
+
+**Note**: You need to restart your dev server after updating `STRIPE_WEBHOOK_SECRET`.
+
+#### 5. Start Development
 
 ```bash
 npm run dev
@@ -147,6 +178,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 - Run `npm run db:generate` after schema changes
 - Make sure you've run `npm install` to install all dependencies
+
+### Stripe webhooks not working locally
+
+- Make sure `stripe listen` is running in a separate terminal
+- Verify the webhook endpoint is correct: `localhost:3000/api/webhooks/stripe`
+- Check that `STRIPE_WEBHOOK_SECRET` in `.env.local` matches the output from `stripe listen`
+- Restart your dev server after updating `STRIPE_WEBHOOK_SECRET`
+- Check server logs for webhook events and errors
+
+### Test payments not updating order status
+
+- Ensure webhooks are being received (check `stripe listen` output)
+- Check that the webhook secret is correctly configured
+- Verify the order exists in the database with the correct `stripeSessionId`
+- Check server logs for webhook processing errors
 
 ## 📁 Environment Files
 
@@ -229,9 +275,41 @@ To learn more about Next.js and the technologies used in this project:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial
 - [Next.js GitHub repository](https://github.com/vercel/next.js) - feedback and contributions welcome
-- [NextAuth.js Documentation](https://next-auth.js.org/) - authentication for Next.js
+- [Auth0 Next.js SDK](https://auth0.com/docs/quickstart/webapp/nextjs) - authentication for Next.js
 - [Prisma Documentation](https://www.prisma.io/docs) - modern database toolkit
-- [Stripe Connect Documentation](https://stripe.com/docs/connect) - marketplace payments
+- [Stripe Documentation](https://stripe.com/docs) - payment processing
+- [Stripe CLI Documentation](https://stripe.com/docs/stripe-cli) - local webhook testing
+- [Cloudinary Documentation](https://cloudinary.com/documentation) - image upload and management
+
+## 🧪 Testing Payments Locally
+
+To test the payment flow:
+
+1. **Start the Stripe CLI webhook listener** (in a separate terminal):
+   ```bash
+   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   ```
+
+2. **Update your `.env.local`** with the webhook secret from the CLI output
+
+3. **Restart your dev server** to load the new webhook secret
+
+4. **Navigate to** `/test-stripe` in your browser (requires authentication)
+
+5. **Make a test payment** using Stripe test card: `4242 4242 4242 4242`
+
+6. **Check the webhook logs** in your terminal and server logs
+
+7. **View your purchases** at `/purchases` to see the order status update
+
+## 📄 Key Pages & Routes
+
+- `/profile` - User profile management (name, avatar, phone)
+- `/purchases` - Purchase history with sortable table
+- `/account/preferences` - Notification and privacy preferences
+- `/test-stripe` - Test payment page (development only)
+- `/api/test-payment` - Create test payment checkout session
+- `/api/webhooks/stripe` - Stripe webhook endpoint for payment events
 
 ## 🚀 Deployment
 

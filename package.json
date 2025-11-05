@@ -36,6 +36,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.6",
     "@stripe/stripe-js": "^8.3.0",
+    "@tanstack/react-table": "^8.21.3",
     "auth0": "^4.34.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
