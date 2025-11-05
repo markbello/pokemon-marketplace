@@ -2,10 +2,6 @@
 
 Brief description of what this PR does.
 
-## 🔗 Related Issue
-
-Closes #[issue number]
-
 ## ✅ Testing
 
 - [ ] Tests pass locally
