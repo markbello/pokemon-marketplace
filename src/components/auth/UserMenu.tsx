@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import Link from 'next/link';
+import { User, ShoppingBag, Settings, LogOut } from 'lucide-react';
 
 export default function UserMenu() {
   const { user, isLoading } = useUser();
@@ -125,11 +126,27 @@ export default function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/profile">Profile</Link>
+          <Link href="/profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/purchases" className="flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4" />
+            Purchases
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/account/preferences" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Preferences
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/api/auth/logout" className="text-destructive focus:text-destructive">
+          <Link href="/api/auth/logout" className="flex items-center gap-2 text-destructive focus:text-destructive">
+            <LogOut className="h-4 w-4" />
             Sign Out
           </Link>
         </DropdownMenuItem>

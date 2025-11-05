@@ -18,6 +18,87 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
+  // Relationships
+  buyerOrders      Order[]              @relation("BuyerOrders")
+
   @@index([displayName])
   @@index([stripeCustomerId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  
+  // Buyer (required)
+  buyerId               String
+  buyer                 User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  
+  // Seller (optional for now - defaults to "platform")
+  sellerId              String?
+  sellerName            String?     // For display purposes
+  
+  // Payment tracking
+  stripeSessionId       String?     @unique
+  stripePaymentIntentId String?     @unique
+  
+  // Order details (store amounts in cents to match Stripe)
+  description           String      // "Test Payment - Stripe Integration"
+  amountCents           Int         // e.g., 100 for $1.00
+  currency              String      @default("USD")
+  
+  // Status tracking
+  status                OrderStatus @default(PENDING)
+  
+  // Test vs real transactions
+  isTestPayment         Boolean     @default(false)
+  
+  // Audit fields
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  // Purchase context (timezone where purchase was made)
+  purchaseTimezone      String?     // IANA timezone (e.g., "America/New_York")
+  
+  @@index([buyerId, createdAt])
+  @@index([status, createdAt])
+  @@index([isTestPayment, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  
+  // What was changed
+  entityType   String   // "Order", "User", "Product", etc.
+  entityId     String   // ID of the entity
+  action       String   // "CREATE", "UPDATE", "DELETE", "PAYMENT_COMPLETED"
+  
+  // Who made the change
+  userId       String?  // Null for system actions
+  ipAddress    String?
+  userAgent    String?
+  
+  // What changed
+  changes      Json?    // Store the actual changes
+  metadata     Json?    // Additional context
+  
+  // When
+  timestamp    DateTime @default(now())
+  
+  // Future partitioning support
+  partitionKey String   // Format: "2025-01" for monthly partitions
+  
+  // Future archival support
+  archivedToS3 Boolean  @default(false)
+  s3Key        String?
+  
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@index([partitionKey, timestamp])
+  @@index([archivedToS3, timestamp])
 }

@@ -14,9 +14,19 @@
     "db:migrate": "dotenv -e .env.local -- npx prisma migrate dev",
     "db:generate": "dotenv -e .env.local -- npx prisma generate",
     "db:studio": "dotenv -e .env.local -- npx prisma studio",
+    "db:studio:remote": "dotenv -e .env.production.local -- npx prisma studio",
     "db:seed": "dotenv -e .env.local -- npx prisma db seed",
     "db:reset": "dotenv -e .env.local -- npx prisma migrate reset",
-    "db:deploy": "dotenv -e .env.local -- npx prisma migrate deploy"
+    "db:deploy": "dotenv -e .env.local -- npx prisma migrate deploy",
+    "db:push": "dotenv -e .env.local -- npx prisma db push",
+    "db:migrate:resolve": "dotenv -e .env.local -- npx prisma migrate resolve",
+    "db:migrate:status": "dotenv -e .env.local -- npx prisma migrate status",
+    "db:migrate:status:remote": "dotenv -e .env.production.local -- npx prisma migrate status",
+    "db:migrate:resolve:remote": "dotenv -e .env.production.local -- npx prisma migrate resolve",
+    "db:push:remote": "dotenv -e .env.production.local -- npx prisma db push",
+    "db:deploy:remote": "dotenv -e .env.production.local -- npx prisma migrate deploy",
+    "db:deploy:preview": "dotenv -e .env.preview.local -- npx prisma migrate deploy",
+    "db:migrate:status:preview": "dotenv -e .env.preview.local -- npx prisma migrate status"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -35,6 +45,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.6",
     "@stripe/stripe-js": "^8.3.0",
+    "@tanstack/react-table": "^8.21.3",
     "auth0": "^4.34.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
