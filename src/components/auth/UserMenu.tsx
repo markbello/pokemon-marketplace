@@ -77,7 +77,7 @@ export default function UserMenu() {
   if (!user) {
     return (
       <Button asChild>
-        <Link href="/api/auth/login">Sign In</Link>
+        <Link href="/api/auth/login" prefetch={false}>Sign In</Link>
       </Button>
     );
   }
@@ -145,7 +145,7 @@ export default function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/api/auth/logout" className="flex items-center gap-2 text-destructive focus:text-destructive">
+          <Link href="/api/auth/logout" prefetch={false} className="flex items-center gap-2 text-destructive focus:text-destructive">
             <LogOut className="h-4 w-4" />
             Sign Out
           </Link>
