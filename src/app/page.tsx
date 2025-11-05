@@ -1,4 +1,14 @@
+import { auth0 } from '@/lib/auth0';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Store, ArrowRight, ShoppingBag } from 'lucide-react';
+import Link from 'next/link';
+import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
+
 export default async function Home() {
+  const session = await auth0.getSession();
+  const isAuthenticated = !!session?.user;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
@@ -8,21 +18,49 @@ export default async function Home() {
         </p>
         
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="mb-2 text-2xl font-semibold">Browse Cards</h2>
-            <p className="mb-4 text-muted-foreground">
-              Explore our collection of Pokemon cards from sellers around the world.
-            </p>
-            <p className="text-sm text-muted-foreground">Coming soon...</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                <CardTitle>Test Purchasing</CardTitle>
+              </div>
+              <CardDescription>
+                Test the purchase flow with a $1 test payment.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BrowseCardsButton isAuthenticated={isAuthenticated} />
+            </CardContent>
+          </Card>
           
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="mb-2 text-2xl font-semibold">Start Selling</h2>
-            <p className="mb-4 text-muted-foreground">
-              List your Pokemon cards and reach buyers worldwide.
-            </p>
-            <p className="text-sm text-muted-foreground">Coming soon...</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                <CardTitle>Start Selling</CardTitle>
+              </div>
+              <CardDescription>
+                List your Pokemon cards and reach buyers worldwide.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isAuthenticated ? (
+                <Button asChild className="w-full">
+                  <Link href="/account/seller">
+                    Go to Seller Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild className="w-full">
+                  <Link href="/api/auth/login?returnTo=/account/seller">
+                    Sign In to Start Selling
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

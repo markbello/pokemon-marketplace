@@ -86,7 +86,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Button asChild size="lg">
-              <Link href="/purchases">View Your Purchases</Link>
+              <Link href="/account/purchases">View Your Purchases</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/test-stripe">Test Another Payment</Link>

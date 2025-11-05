@@ -76,7 +76,7 @@ export default function TestStripePage() {
 
           {isAuthenticated && (
             <div className="mt-6">
-              <Link href="/purchases" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/account/purchases" className="text-blue-600 hover:underline dark:text-blue-400">
                 View your purchases →
               </Link>
             </div>

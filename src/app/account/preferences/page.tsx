@@ -19,6 +19,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   onboardingSchema,
@@ -174,9 +175,20 @@ export default function PreferencesPage() {
   if (isLoading || isLoadingUserData) {
     return (
       <AccountLayout>
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">Preferences</h1>
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="space-y-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">Preferences</h1>
+            <p className="text-muted-foreground">Your notification and privacy settings</p>
+          </div>
+          {/* Reserve space for content card to prevent layout shift */}
+          <Card>
+            <CardContent className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">Loading...</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AccountLayout>
     );
@@ -186,9 +198,9 @@ export default function PreferencesPage() {
     <AccountLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Preferences</h1>
-          <p className="text-muted-foreground mt-2">Your notification and privacy settings</p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Preferences</h1>
+          <p className="text-muted-foreground">Your notification and privacy settings</p>
         </div>
 
         {/* Error Messages */}

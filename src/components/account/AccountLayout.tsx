@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ShoppingBag, User, Settings } from 'lucide-react';
+import { ShoppingBag, User, Settings, Store } from 'lucide-react';
 
 interface AccountLayoutProps {
   children: React.ReactNode;
@@ -12,13 +12,18 @@ interface AccountLayoutProps {
 const navigation = [
   {
     name: 'Profile',
-    href: '/profile',
+    href: '/account/profile',
     icon: User,
   },
   {
     name: 'Purchases',
-    href: '/purchases',
+    href: '/account/purchases',
     icon: ShoppingBag,
+  },
+  {
+    name: 'Seller Dashboard',
+    href: '/account/seller',
+    icon: Store,
   },
   {
     name: 'Preferences',
@@ -31,10 +36,10 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const pathname = usePathname();
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8">
+    <div className="container max-w-7xl px-4 py-8">
       <div className="flex flex-col gap-8 lg:flex-row">
-        {/* Sidebar */}
-        <aside className="lg:w-64 lg:flex-shrink-0">
+        {/* Sidebar - fixed width to prevent shifting */}
+        <aside className="w-full lg:w-64 lg:max-w-[256px] lg:min-w-[256px] lg:shrink-0">
           <nav className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
@@ -51,16 +56,16 @@ export function AccountLayout({ children }: AccountLayoutProps) {
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
           </nav>
         </aside>
 
-        {/* Main content */}
-        <main className="min-w-0 flex-1">{children}</main>
+        {/* Main content - flex-1 to take remaining space */}
+        <main className="min-w-0 flex-1 lg:max-w-[calc(100%-256px-2rem)]">{children}</main>
       </div>
     </div>
   );

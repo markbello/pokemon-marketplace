@@ -13,13 +13,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import Link from 'next/link';
-import { User, ShoppingBag, Settings, LogOut } from 'lucide-react';
+import { User, ShoppingBag, Settings, LogOut, Store, Shield } from 'lucide-react';
 
 export default function UserMenu() {
   const { user, isLoading } = useUser();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   const [freshUserData, setFreshUserData] = useState<typeof user | null>(null);
   const [hasLoadedFreshData, setHasLoadedFreshData] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Track when we've completed the initial auth check to prevent flash
   // Only update state when loading completes (isLoading transitions from true to false)
@@ -54,11 +55,27 @@ export default function UserMenu() {
         }
       };
 
+      const checkAdminStatus = async () => {
+        try {
+          const response = await fetch('/api/admin/check');
+          if (response.ok) {
+            const data = await response.json();
+            setIsAdmin(data.isAdmin || false);
+          }
+        } catch (error) {
+          // Silently fail - assume not admin
+          console.error('Failed to check admin status:', error);
+          setIsAdmin(false);
+        }
+      };
+
       fetchFreshData();
+      checkAdminStatus();
 
       // Refetch on window focus (happens after router.refresh() and page navigation)
       const handleFocus = () => {
         fetchFreshData();
+        checkAdminStatus();
       };
       window.addEventListener('focus', handleFocus);
 
@@ -126,15 +143,21 @@ export default function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center gap-2">
+          <Link href="/account/profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/purchases" className="flex items-center gap-2">
+          <Link href="/account/purchases" className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
             Purchases
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/account/seller" className="flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            Seller Dashboard
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -143,6 +166,17 @@ export default function UserMenu() {
             Preferences
           </Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin Dashboard
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/api/auth/logout" prefetch={false} className="flex items-center gap-2 text-destructive focus:text-destructive">
