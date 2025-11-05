@@ -13,7 +13,7 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Authentication**: NextAuth.js
+- **Authentication**: Auth0 with Next.js
 - **Database**: PostgreSQL with Prisma ORM
 - **Payments**: Stripe Connect for marketplace transactions
 - **Hosting**: Vercel
@@ -24,10 +24,13 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 
 - Node.js 18+
 - npm or yarn
-- PostgreSQL database
-- Stripe account
+- **Vercel CLI**: `npm install -g vercel`
+- Access to the pokemonmarketplace Vercel team (contact team lead)
+- Auth0 account credentials (get from team lead)
 
-### Installation
+### Setup Instructions
+
+#### 1. Clone and Install
 
 ```bash
 # Clone the repository
@@ -36,37 +39,173 @@ cd pokemon-marketplace
 
 # Install dependencies
 npm install
+```
 
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your configuration
+#### 2. Environment Variables
 
-# Run database migrations
-npm run db:migrate
+**Important**: All environment variables must be set up using Vercel CLI to ensure database connections are configured correctly.
 
-# Start development server
+```bash
+# Link your local project to Vercel project
+vercel link
+
+# Pull environment variables from Vercel (creates .env.development.local)
+vercel env pull
+```
+
+**Copy DATABASE_URL to .env.local:**
+
+After running `vercel env pull`, you'll get a `.env.development.local` file. Copy the `DATABASE_URL` from that file to your `.env.local` file (create it if it doesn't exist).
+
+Your `.env.local` should contain:
+
+```bash
+# Auth0 Configuration (get from team lead)
+AUTH0_SECRET="[get-from-team-lead]"
+AUTH0_BASE_URL="http://localhost:3000"
+AUTH0_ISSUER_BASE_URL="[get-from-team-lead]"
+AUTH0_CLIENT_ID="[get-from-team-lead]"
+AUTH0_CLIENT_SECRET="[get-from-team-lead]"
+AUTH0_DOMAIN="[get-from-team-lead]"
+AUTH0_MANAGEMENT_CLIENT_ID="[get-from-team-lead]"
+AUTH0_MANAGEMENT_CLIENT_SECRET="[get-from-team-lead]"
+
+# Database - Copied from .env.development.local (Vercel CLI output)
+DATABASE_URL="postgresql://[copied-from-vercel-output]"
+
+# Other environment variables...
+```
+
+**Note**: Vercel automatically provides `DATABASE_URL` for preview and production deployments. Local development uses the staging database connection string.
+
+#### 3. Database Setup
+
+```bash
+# Generate Prisma client
+npm run db:generate
+
+# Create and apply initial migration
+npm run db:migrate -- --name init
+
+# (Optional) Seed database with test data
+npm run db:seed
+```
+
+#### 4. Start Development
+
+```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## 🗄️ Development Commands
+
+### Database Operations (Always use these scripts)
+
+**Important**: Always use `npm run db:*` scripts, never direct `npx prisma` commands. The scripts ensure `.env.local` is properly loaded.
+
+- `npm run db:migrate` - Create and apply new migrations (e.g., `npm run db:migrate -- --name add_user_table`)
+- `npm run db:generate` - Regenerate Prisma client after schema changes
+- `npm run db:studio` - Open Prisma Studio (database GUI) to view/edit data
+- `npm run db:seed` - Seed database with test data
+- `npm run db:reset` - Reset database (⚠️ **WARNING**: deletes all data)
+- `npm run db:deploy` - Apply migrations to remote database (production)
+
+### Next.js
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint errors
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+
+## 🔧 Troubleshooting
+
+### "Environment variable not found: DATABASE_URL"
+
+- Make sure you copied `DATABASE_URL` from `.env.development.local` to `.env.local`
+- Always use `npm run db:*` scripts, not direct `npx prisma` commands
+- The scripts use `dotenv-cli` to read `.env.local` automatically
+
+### "Access denied" when running `vercel link`
+
+- Contact team lead to be added to the Vercel team
+- Make sure you're logged in: `vercel login`
+
+### Database connection fails
+
+- Verify your `DATABASE_URL` in `.env.local` matches the Vercel output
+- Try pulling fresh environment variables: `vercel env pull`
+- Check that you're using the staging database connection string (local dev uses staging DB)
+
+### Prisma client not found
+
+- Run `npm run db:generate` after schema changes
+- Make sure you've run `npm install` to install all dependencies
+
+## 📁 Environment Files
+
+- `.env.local` - Your local environment variables (Next.js runtime + database) - **Never commit this**
+- `.env.development.local` - Generated by Vercel CLI (reference only) - **Never commit this**
+- `.env.example` - Template for required variables (committed to git)
+
+**Never commit actual environment files to git.**
+
+## 👥 Team Onboarding
+
+### New Developer Setup
+
+1. **Install Prerequisites:**
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Get Access:**
+   - Contact team lead to be added to the Vercel team
+   - Get Auth0 credentials from team lead
+
+3. **Clone and Setup:**
+   ```bash
+   git clone [repo]
+   cd pokemon-marketplace
+   npm install
+   ```
+
+4. **Environment Variables:**
+   ```bash
+   vercel link
+   vercel env pull
+   # Copy DATABASE_URL from .env.development.local to .env.local
+   # Get other environment variables from team lead
+   ```
+
+5. **Database Setup:**
+   ```bash
+   npm run db:generate
+   npm run db:migrate
+   npm run db:seed  # Optional test data
+   ```
+
+6. **Start Development:**
+   ```bash
+   npm run dev
+   ```
+
 ## 📋 Development Workflow
 
 1. Create feature branch from `main`
 2. Make changes and test locally
-3. Run tests: `npm run test`
-4. Create pull request
-5. Code review and approval
-6. Merge to `main` triggers staging deployment
-7. Manual promotion to production
+3. Run linting: `npm run lint`
+4. Format code: `npm run format`
+5. Create pull request
+6. Code review and approval
+7. Merge to `main` triggers staging deployment
+8. Manual promotion to production
 
 ## 🔗 Links
 

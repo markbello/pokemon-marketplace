@@ -87,3 +87,4 @@ temp/
 android/
 ios/
 .capacitor/
+/src/generated/prisma
