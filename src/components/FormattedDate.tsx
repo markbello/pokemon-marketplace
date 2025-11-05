@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 interface FormattedDateProps {
   date: Date | string;
@@ -11,9 +11,7 @@ interface FormattedDateProps {
  * Client-side date formatter that shows both purchase timezone and current viewing timezone
  */
 export function FormattedDate({ date, purchaseTimezone }: FormattedDateProps) {
-  const [formatted, setFormatted] = useState<string>('');
-
-  useEffect(() => {
+  const formatted = useMemo(() => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     
@@ -39,10 +37,10 @@ export function FormattedDate({ date, purchaseTimezone }: FormattedDateProps) {
         timeZone: purchaseTimezone,
       }).format(dateObj);
       
-      setFormatted(`${formattedInCurrent} (purchased at ${formattedInPurchase})`);
-    } else {
-      setFormatted(formattedInCurrent);
+      return `${formattedInCurrent} (purchased at ${formattedInPurchase})`;
     }
+    
+    return formattedInCurrent;
   }, [date, purchaseTimezone]);
 
   return <span>{formatted}</span>;

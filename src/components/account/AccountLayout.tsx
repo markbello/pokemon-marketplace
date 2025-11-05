@@ -3,12 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  ShoppingBag,
-  User,
-  Settings,
-} from 'lucide-react';
+import { ShoppingBag, User, Settings } from 'lucide-react';
 
 interface AccountLayoutProps {
   children: React.ReactNode;
@@ -65,9 +60,8 @@ export function AccountLayout({ children }: AccountLayoutProps) {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );
 }
-

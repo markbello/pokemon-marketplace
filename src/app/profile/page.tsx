@@ -6,7 +6,6 @@ import { useUser } from '@auth0/nextjs-auth0';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Loader2, Mail, Phone, User, Save, X, Camera } from 'lucide-react';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { AvatarUploadModal } from '@/components/avatar/AvatarUploadModal';
@@ -16,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,

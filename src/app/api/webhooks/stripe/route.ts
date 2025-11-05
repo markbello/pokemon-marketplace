@@ -60,8 +60,8 @@ export async function POST(request: Request) {
       console.log('[Webhook] Session metadata:', session.metadata);
       console.log('[Webhook] Session metadata type:', typeof session.metadata);
       
-      // Try to get orderId from metadata - handle both object and direct access
-      let orderId = session.metadata?.orderId || (session.metadata as any)?.orderId;
+      // Try to get orderId from metadata
+      let orderId: string | undefined = session.metadata?.orderId;
 
       console.log('[Webhook] Order ID from metadata:', orderId);
 
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     } else if (event.type === 'payment_intent.succeeded') {
       // Fallback: Handle payment_intent.succeeded if checkout.session.completed isn't sent
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      let orderId = paymentIntent.metadata?.orderId;
+      let orderId: string | undefined = paymentIntent.metadata?.orderId;
 
       console.log('[Webhook] Payment Intent ID:', paymentIntent.id);
       console.log('[Webhook] Payment Intent metadata:', JSON.stringify(paymentIntent.metadata));
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
                   console.log('[Webhook] Matched order by session payment intent:', orderId);
                   break;
                 }
-              } catch (err) {
+              } catch {
                 // Skip if session retrieval fails
               }
             }

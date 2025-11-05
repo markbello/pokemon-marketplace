@@ -27,7 +27,7 @@ export async function getOrCreateStripeCustomer(
     try {
       await stripe.customers.retrieve(user.stripeCustomerId);
       return user.stripeCustomerId;
-    } catch (error) {
+    } catch {
       // Customer doesn't exist in Stripe, create a new one
       console.warn(`Stripe customer ${user.stripeCustomerId} not found, creating new one`);
     }
