@@ -103,4 +103,3 @@ export async function refreshUserCache(auth0UserId: string) {
 
   return auth0User;
 }
-
