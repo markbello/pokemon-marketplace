@@ -49,7 +49,6 @@ export default function SellerDashboardPage() {
       fetchStatus();
       router.replace('/account/seller');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router]);
 
   // Fetch seller status
@@ -77,7 +76,6 @@ export default function SellerDashboardPage() {
     } else if (!userLoading && !user) {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading]);
 
   // Handle starting onboarding
@@ -137,14 +135,14 @@ export default function SellerDashboardPage() {
       <AccountLayout>
         <div className="space-y-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
+            <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
             <p className="text-muted-foreground">Manage your seller account and payments</p>
           </div>
           {/* Reserve space for content card to prevent layout shift */}
           <Card>
-            <CardContent className="flex items-center justify-center min-h-[400px]">
+            <CardContent className="flex min-h-[400px] items-center justify-center">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+                <Loader2 className="text-muted-foreground mx-auto mb-4 h-8 w-8 animate-spin" />
                 <p className="text-muted-foreground">Loading seller dashboard...</p>
               </div>
             </CardContent>
@@ -159,9 +157,7 @@ export default function SellerDashboardPage() {
       <AccountLayout>
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please log in to access the seller dashboard.
-          </AlertDescription>
+          <AlertDescription>Please log in to access the seller dashboard.</AlertDescription>
         </Alert>
       </AccountLayout>
     );
@@ -173,7 +169,7 @@ export default function SellerDashboardPage() {
       <AccountLayout>
         <div className="space-y-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
+            <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
             <p className="text-muted-foreground">Start selling on Pokemon Marketplace</p>
           </div>
 
@@ -191,8 +187,8 @@ export default function SellerDashboardPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <h3 className="font-semibold">What you'll need:</h3>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <h3 className="font-semibold">What you&apos;ll need:</h3>
+                <ul className="text-muted-foreground list-inside list-disc space-y-1">
                   <li>Business information (individual or business)</li>
                   <li>Tax information (SSN or EIN)</li>
                   <li>Bank account details for payouts</li>
@@ -221,8 +217,8 @@ export default function SellerDashboardPage() {
                 </Button>
               </div>
 
-              <p className="text-sm text-muted-foreground">
-                You'll be redirected to Stripe to complete the secure onboarding process. This
+              <p className="text-muted-foreground text-sm">
+                You&apos;ll be redirected to Stripe to complete the secure onboarding process. This
                 typically takes 5-10 minutes.
               </p>
             </CardContent>
@@ -238,7 +234,7 @@ export default function SellerDashboardPage() {
       <AccountLayout>
         <div className="space-y-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
+            <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
             <p className="text-muted-foreground">Your seller account verification status</p>
           </div>
 
@@ -291,11 +287,7 @@ export default function SellerDashboardPage() {
               )}
 
               <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleRefreshStatus}
-                  variant="outline"
-                  disabled={isLoading}
-                >
+                <Button onClick={handleRefreshStatus} variant="outline" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -327,9 +319,9 @@ export default function SellerDashboardPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  You cannot list items or receive payments until your account is fully verified.
-                  If you need to complete or update your information, click "Open Stripe Dashboard"
-                  above.
+                  You cannot list items or receive payments until your account is fully verified. If
+                  you need to complete or update your information, click &quot;Open Stripe
+                  Dashboard&quot; above.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -345,7 +337,7 @@ export default function SellerDashboardPage() {
       <div className="space-y-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
+            <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
             <p className="text-muted-foreground">Manage your seller account and payments</p>
           </div>
           <div className="flex items-center gap-2 text-green-600">
@@ -364,10 +356,8 @@ export default function SellerDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                From your Stripe Dashboard, you can:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">From your Stripe Dashboard, you can:</p>
+              <ul className="text-muted-foreground list-inside list-disc space-y-2 text-sm">
                 <li>View your payout schedule and transaction history</li>
                 <li>Update your bank account and tax information</li>
                 <li>Manage your business profile and settings</li>
@@ -401,4 +391,3 @@ export default function SellerDashboardPage() {
     </AccountLayout>
   );
 }
-

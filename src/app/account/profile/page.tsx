@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@auth0/nextjs-auth0';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Mail, Phone, User, Save, X, Camera } from 'lucide-react';
+import { Loader2, Mail, User, Save, X, Camera } from 'lucide-react';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { AvatarUploadModal } from '@/components/avatar/AvatarUploadModal';
 import { getAvatarUrl } from '@/lib/avatar-utils';
@@ -27,19 +26,16 @@ import { toast } from 'sonner';
 import {
   onboardingSchema,
   type OnboardingFormData,
-  type BasicProfileFormData,
 } from '@/lib/validations';
 import { AccountLayout } from '@/components/account/AccountLayout';
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { user, isLoading } = useUser();
   const [userData, setUserData] = useState<typeof user | null>(null);
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [hasBasicChanges, setHasBasicChanges] = useState(false);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
@@ -152,12 +148,6 @@ export default function ProfilePage() {
     setSuccess(false);
 
     try {
-      const currentBasic = {
-        firstName: metadata?.firstName || '',
-        lastName: metadata?.lastName || '',
-        displayName: metadata?.displayName || '',
-        phone: metadata?.phone || '',
-      };
 
       const currentPrefs = metadata?.preferences || {};
 

@@ -39,7 +39,6 @@ export default function AdminPage() {
   const [sellers, setSellers] = useState<SellerAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Check admin status and fetch sellers
   useEffect(() => {
@@ -57,7 +56,6 @@ export default function AdminPage() {
 
         if (response.status === 403) {
           setIsAdmin(false);
-          setError('You do not have admin access');
           setIsLoading(false);
           return;
         }
@@ -73,7 +71,6 @@ export default function AdminPage() {
       } catch (error) {
         console.error('Error fetching admin data:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
-        setError(errorMessage);
         toast.error(errorMessage);
       } finally {
         setIsLoading(false);
@@ -141,7 +138,7 @@ export default function AdminPage() {
               </div>
               <CardTitle className="text-2xl">Access Denied</CardTitle>
               <CardDescription className="mt-2">
-                You don't have permission to access this page.
+                You don&apos;t have permission to access this page.
               </CardDescription>
             </CardHeader>
             <CardContent>

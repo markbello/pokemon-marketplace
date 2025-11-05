@@ -99,6 +99,44 @@ npm run db:migrate -- --name init
 npm run db:seed
 ```
 
+**Important**: Always use `npm run db:migrate` for schema changes in development. This creates proper migration files that can be tracked in git and applied to production.
+
+#### Troubleshooting Database Migrations
+
+**If you get a migration error saying a column already exists:**
+
+This usually happens when `db:push` was used instead of `db:migrate`, or the schema was changed manually. To fix:
+
+1. Check migration status:
+   ```bash
+   npm run db:migrate:status
+   ```
+
+2. If the migration failed because the column/table already exists, mark it as applied:
+   ```bash
+   npm run db:migrate:resolve:applied "migration_name"
+   ```
+
+3. Verify the status:
+   ```bash
+   npm run db:migrate:status
+   ```
+
+**If you get a shadow database error during migration:**
+
+The shadow database is used by Prisma to validate migrations. If you encounter errors:
+
+1. Check if the issue is with an existing migration (like duplicate enum types)
+2. If needed, you can reset the shadow database or resolve the specific migration issue
+3. For production, always test migrations in a staging environment first
+
+**Best Practices:**
+
+- ✅ **Always use `db:migrate`** for schema changes that need to be tracked
+- ✅ **Never use `db:push`** for changes that will go to production (it doesn't create migration files)
+- ✅ **Check migration status** before deploying to catch issues early
+- ✅ **Test migrations** in a staging environment before production
+
 #### 4. Stripe Webhook Setup (for Local Testing)
 
 To test Stripe webhooks locally, you'll need the Stripe CLI:

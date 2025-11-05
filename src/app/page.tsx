@@ -1,8 +1,9 @@
 import { auth0 } from '@/lib/auth0';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Store, ArrowRight } from 'lucide-react';
+import { Store, ArrowRight, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
 
 export default async function Home() {
   const session = await auth0.getSession();
@@ -19,13 +20,16 @@ export default async function Home() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Browse Cards</CardTitle>
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                <CardTitle>Test Purchasing</CardTitle>
+              </div>
               <CardDescription>
-                Explore our collection of Pokemon cards from sellers around the world.
+                Test the purchase flow with a $1 test payment.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Coming soon...</p>
+              <BrowseCardsButton isAuthenticated={isAuthenticated} />
             </CardContent>
           </Card>
           
