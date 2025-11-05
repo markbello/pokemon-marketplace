@@ -78,6 +78,16 @@ export async function updateStripeCustomerId(auth0UserId: string, stripeCustomer
 }
 
 /**
+ * Update Stripe Connect Express account ID
+ */
+export async function updateStripeAccountId(auth0UserId: string, stripeAccountId: string) {
+  return prisma.user.update({
+    where: { id: auth0UserId },
+    data: { stripeAccountId },
+  });
+}
+
+/**
  * Get user by Stripe Customer ID
  */
 export async function getUserByStripeCustomerId(stripeCustomerId: string) {

@@ -12,10 +12,11 @@ export default async function PaymentMethodsPage() {
 
   return (
     <AccountLayout>
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold">Payment Methods</h1>
-        <p className="text-muted-foreground">Manage your saved payment methods</p>
-      </div>
+      <div className="space-y-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Payment Methods</h1>
+          <p className="text-muted-foreground">Manage your saved payment methods</p>
+        </div>
 
       <Card>
         <CardHeader>

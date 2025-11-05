@@ -15,6 +15,7 @@ model User {
   displayName      String?             // Cached from Auth0 user_metadata.displayName
   avatarUrl        String?             // Cached from Auth0 user_metadata.picture
   stripeCustomerId String?   @unique   // Business data (not in Auth0)
+  stripeAccountId  String?   @unique   // Stripe Connect Express account ID (for sellers)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -23,6 +24,7 @@ model User {
 
   @@index([displayName])
   @@index([stripeCustomerId])
+  @@index([stripeAccountId])
 }
 
 enum OrderStatus {
