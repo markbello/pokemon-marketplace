@@ -102,7 +102,10 @@ export default function ProfilePage() {
   // Update current avatar URL when user data changes
   useEffect(() => {
     if (displayUser) {
-      const avatarUrl = getAvatarUrl(displayUser);
+      const avatarData = getUserMetadata(displayUser)?.avatar;
+      const publicId = avatarData?.public_id;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+      const avatarUrl = getAvatarUrl(publicId, cloudName, 'large') || avatarData?.secure_url || null;
       setCurrentAvatarUrl(avatarUrl);
     }
   }, [displayUser]);
@@ -129,7 +132,10 @@ export default function ProfilePage() {
       .then((data) => {
         if (data.user) {
           setUserData(data.user);
-          const newAvatarUrl = getAvatarUrl(data.user);
+          const avatarData = getUserMetadata(data.user)?.avatar;
+          const publicId = avatarData?.public_id;
+          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+          const newAvatarUrl = getAvatarUrl(publicId, cloudName, 'large') || avatarData?.secure_url || null;
           setCurrentAvatarUrl(newAvatarUrl);
         }
       })
@@ -323,11 +329,6 @@ export default function ProfilePage() {
                       <FormControl>
                         <div className="relative">
                           <Input {...field} placeholder="johndoe" />
-                          {isCheckingUsername && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            </div>
-                          )}
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -428,9 +429,11 @@ export default function ProfilePage() {
 
       {/* Avatar Upload Modal */}
       <AvatarUploadModal
-        isOpen={isAvatarModalOpen}
-        onClose={() => setIsAvatarModalOpen(false)}
-        onSuccess={handleAvatarUploadSuccess}
+        open={isAvatarModalOpen}
+        onOpenChange={setIsAvatarModalOpen}
+        onUploadComplete={(publicId, secureUrl) => {
+          handleAvatarUploadSuccess();
+        }}
         currentAvatarUrl={currentAvatarUrl}
       />
     </AccountLayout>
