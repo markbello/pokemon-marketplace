@@ -20,7 +20,8 @@ model User {
   updatedAt        DateTime  @updatedAt
 
   // Relationships
-  buyerOrders      Order[]              @relation("BuyerOrders")
+  buyerOrders      Order[]    @relation("BuyerOrders")
+  listings         Listing[]  @relation("SellerListings")
 
   @@index([displayName])
   @@index([stripeCustomerId])
@@ -66,10 +67,18 @@ model Order {
   
   // Purchase context (timezone where purchase was made)
   purchaseTimezone      String?     // IANA timezone (e.g., "America/New_York")
+
+  // Optional association to a Listing-based purchase (PM-33)
+  listingId                   String?
+  listing                     Listing?   @relation(fields: [listingId], references: [id])
+  snapshotListingDisplayTitle String?
+  snapshotListingImageUrl     String?
+  snapshotListingPriceCents   Int?
   
   @@index([buyerId, createdAt])
   @@index([status, createdAt])
   @@index([isTestPayment, createdAt])
+  @@index([listingId])
 }
 
 model AuditLog {
@@ -104,3 +113,32 @@ model AuditLog {
   @@index([partitionKey, timestamp])
   @@index([archivedToS3, timestamp])
 }
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  SOLD
+}
+
+model Listing {
+  id               String         @id @default(cuid())
+  sellerId         String
+  seller           User           @relation("SellerListings", fields: [sellerId], references: [id])
+
+  displayTitle     String
+  sellerNotes      String?
+  askingPriceCents Int
+  currency         String         @default("USD")
+  status           ListingStatus  @default(DRAFT)
+  imageUrl         String?
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Orders created from this listing (single-item purchases)
+  orders           Order[]
+
+  @@index([sellerId, status])
+  @@index([status, createdAt])
+}
+

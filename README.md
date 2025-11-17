@@ -86,20 +86,39 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="[get-from-team-lead]"
 
 **Note**: Vercel automatically provides `DATABASE_URL` for preview and production deployments. Local development uses the staging database connection string.
 
-#### 3. Database Setup
+#### 3. Database Setup (local dev)
+
+By default, this project assumes a PostgreSQL database specified by `DATABASE_URL`. For a smoother Prisma experience and to avoid shadow database issues, it’s recommended to use a **local Postgres instance** for development and apply migrations to staging/production separately.
+
+##### Option A (recommended): Local Postgres via Docker
+
+1. Start the local database:
 
 ```bash
-# Generate Prisma client
-npm run db:generate
+docker compose up -d db
+```
 
-# Create and apply initial migration
-npm run db:migrate -- --name init
+2. Set `DATABASE_URL` in `.env.local` to point at the local DB:
+
+```bash
+DATABASE_URL="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
+```
+
+3. Apply all existing migrations and generate the Prisma client:
+
+```bash
+npm run db:migrate
+npm run db:generate
 
 # (Optional) Seed database with test data
 npm run db:seed
 ```
 
-**Important**: Always use `npm run db:migrate` for schema changes in development. This creates proper migration files that can be tracked in git and applied to production.
+##### Option B: Shared staging database
+
+If you must point `DATABASE_URL` at the shared staging database, be aware that Prisma’s shadow database can get into a bad state more easily (e.g., enum/types already existing). In that case, you may need to manually drop the shadow DB on the server when migrations fail. The recommended workflow is Option A.
+
+**Important**: Always use `npm run db:migrate` for schema changes in development. This creates proper migration files that can be tracked in git and applied to production (via `npm run db:deploy`).
 
 #### Troubleshooting Database Migrations
 
@@ -174,14 +193,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ### Database Operations (Always use these scripts)
 
-**Important**: Always use `npm run db:*` scripts, never direct `npx prisma` commands. The scripts ensure `.env.local` is properly loaded.
+**Important**: Always use `npm run db:*` scripts, never direct `npx prisma` commands. The scripts ensure `.env.local` is properly loaded and keep migrations consistent across local/staging/prod.
 
-- `npm run db:migrate` - Create and apply new migrations (e.g., `npm run db:migrate -- --name add_user_table`)
+- `npm run db:migrate` - Create and apply new migrations to your **local** database (e.g., `npm run db:migrate -- --name pm33-listings`)
 - `npm run db:generate` - Regenerate Prisma client after schema changes
 - `npm run db:studio` - Open Prisma Studio (database GUI) to view/edit data
 - `npm run db:seed` - Seed database with test data
 - `npm run db:reset` - Reset database (⚠️ **WARNING**: deletes all data)
-- `npm run db:deploy` - Apply migrations to remote database (production)
+- `npm run db:deploy` - Apply migrations to remote database (staging/production)
 
 ### Next.js
 
