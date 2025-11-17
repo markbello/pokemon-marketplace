@@ -1,0 +1,159 @@
+import Stripe from 'stripe';
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { auth0 } from '@/lib/auth0';
+import { prisma } from '@/lib/prisma';
+import { getBaseUrl } from '@/lib/utils';
+import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
+import { getOrCreateUser } from '@/lib/user';
+import { logAuditEvent } from '@/lib/audit';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-10-29.clover',
+});
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth0.getSession();
+
+    if (!session?.user?.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const buyerId = session.user.sub;
+    const buyerEmail = session.user.email;
+
+    if (!buyerEmail) {
+      return NextResponse.json({ error: 'User email not found' }, { status: 400 });
+    }
+
+    const headersList = await headers();
+    const ipAddress =
+      headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
+    const userAgent = headersList.get('user-agent') || undefined;
+
+    const body = await request.json().catch(() => ({}));
+    const purchaseTimezone = body.timezone || undefined;
+
+    const { id: listingId } = await params;
+
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { seller: true },
+    });
+
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    }
+
+    if (listing.status !== 'PUBLISHED') {
+      return NextResponse.json({ error: 'Listing is not available for purchase' }, { status: 400 });
+    }
+
+    if (listing.sellerId === buyerId) {
+      return NextResponse.json({ error: 'You cannot purchase your own listing' }, { status: 400 });
+    }
+
+    // Ensure we have a user record for the buyer in our DB
+    const buyer = await getOrCreateUser(buyerId);
+
+    // Create Order as a pending listing-based purchase
+    const order = await prisma.order.create({
+      data: {
+        buyerId,
+        sellerId: listing.sellerId,
+        sellerName: listing.seller.displayName || null,
+        description: `Listing purchase - ${listing.displayTitle}`,
+        amountCents: listing.askingPriceCents,
+        currency: listing.currency,
+        status: 'PENDING',
+        isTestPayment: true, // still in test mode for PM-33
+        purchaseTimezone,
+        listingId: listing.id,
+        snapshotListingDisplayTitle: listing.displayTitle,
+        snapshotListingImageUrl: listing.imageUrl,
+        snapshotListingPriceCents: listing.askingPriceCents,
+      },
+    });
+
+    await logAuditEvent({
+      entityType: 'Order',
+      entityId: order.id,
+      action: 'CREATE',
+      userId: buyerId,
+      ipAddress,
+      userAgent,
+      changes: {
+        orderId: order.id,
+        listingId: listing.id,
+        amountCents: order.amountCents,
+      },
+    });
+
+    const customerId = await getOrCreateStripeCustomer(
+      buyerId,
+      buyerEmail,
+      buyer.displayName || session.user.name || undefined,
+    );
+
+    const baseUrl = getBaseUrl();
+    const sellerSegment = encodeURIComponent(listing.sellerId);
+    const successUrl = `${baseUrl}/listings/${listing.id}/purchase/success?orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}/seller/${sellerSegment}/listings`;
+
+    console.log('[ListingCheckout] baseUrl:', baseUrl);
+    console.log('[ListingCheckout] success_url:', successUrl);
+    console.log('[ListingCheckout] cancel_url:', cancelUrl);
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: listing.currency.toLowerCase(),
+            product_data: {
+              name: listing.displayTitle,
+            },
+            unit_amount: listing.askingPriceCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      payment_intent_data: {
+        description: `Listing purchase - ${listing.displayTitle}`,
+        metadata: {
+          orderId: order.id,
+          buyerId,
+          listingId: listing.id,
+        },
+      },
+      metadata: {
+        orderId: order.id,
+        buyerId,
+        listingId: listing.id,
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { stripeSessionId: checkoutSession.id },
+    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (error) {
+    console.error('[ListingCheckout] Error creating checkout session:', error);
+
+    if (error instanceof Stripe.errors.StripeError) {
+      return NextResponse.json({ error: `Stripe error: ${error.message}` }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to create listing checkout session' },
+      { status: 500 },
+    );
+  }
+}

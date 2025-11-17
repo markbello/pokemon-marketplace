@@ -7,7 +7,24 @@ import { AccountLayout } from '@/components/account/AccountLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, Clock, ExternalLink, Store, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Loader2,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  Store,
+  AlertCircle,
+  Pencil,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SellerStatus {
@@ -22,6 +39,19 @@ interface SellerStatus {
   } | null;
 }
 
+interface Listing {
+  id: string;
+  sellerId: string;
+  displayTitle: string;
+  sellerNotes: string | null;
+  askingPriceCents: number;
+  currency: string;
+  status: 'DRAFT' | 'PUBLISHED' | 'SOLD';
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function SellerDashboardContent() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
@@ -30,6 +60,20 @@ function SellerDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isStartingOnboarding, setIsStartingOnboarding] = useState(false);
   const [isOpeningDashboard, setIsOpeningDashboard] = useState(false);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [isSavingListing, setIsSavingListing] = useState(false);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [newListingTitle, setNewListingTitle] = useState('');
+  const [newListingPrice, setNewListingPrice] = useState('');
+  const [newListingNotes, setNewListingNotes] = useState('');
+  const [newListingImageUrl, setNewListingImageUrl] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editStatus, setEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
 
   // Check if user returned from Stripe onboarding
   useEffect(() => {
@@ -77,6 +121,173 @@ function SellerDashboardContent() {
       setIsLoading(false);
     }
   }, [user, userLoading]);
+
+  // Fetch listings once seller is verified
+  const fetchListings = async () => {
+    try {
+      const response = await fetch('/api/seller/listings');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to load listings');
+      }
+      const data = (await response.json()) as { listings: Listing[] };
+      setListings(data.listings);
+    } catch (error) {
+      console.error('Error fetching listings:', error);
+      toast.error('Failed to load listings');
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    if (status?.hasAccount && status.isVerified) {
+      fetchListings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.hasAccount, status?.isVerified]);
+
+  const resetNewListingForm = () => {
+    setNewListingTitle('');
+    setNewListingPrice('');
+    setNewListingNotes('');
+    setNewListingImageUrl('');
+  };
+
+  const handleCreateListing = async () => {
+    if (!newListingTitle || !newListingPrice) {
+      toast.error('Please enter a title and price');
+      return;
+    }
+
+    const parsedPrice = Number.parseFloat(newListingPrice);
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      toast.error('Price must be a non-negative number');
+      return;
+    }
+
+    const askingPriceCents = Math.round(parsedPrice * 100);
+
+    try {
+      setIsSavingListing(true);
+      const response = await fetch('/api/seller/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          displayTitle: newListingTitle,
+          askingPriceCents,
+          sellerNotes: newListingNotes || undefined,
+          imageUrl: newListingImageUrl || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create listing');
+      }
+
+      const data = (await response.json()) as { listing: Listing };
+      setListings((prev) => [data.listing, ...prev]);
+      resetNewListingForm();
+      toast.success('Listing created');
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create listing');
+    } finally {
+      setIsSavingListing(false);
+    }
+  };
+
+  const beginEditListing = (listing: Listing) => {
+    setEditingListing(listing);
+    setEditTitle(listing.displayTitle);
+    setEditPrice((listing.askingPriceCents / 100).toString());
+    setEditNotes(listing.sellerNotes || '');
+    setEditImageUrl(listing.imageUrl || '');
+    setEditStatus(listing.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingListing) return;
+
+    if (!editTitle || !editPrice) {
+      toast.error('Please enter a title and price');
+      return;
+    }
+
+    const parsedPrice = Number.parseFloat(editPrice);
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      toast.error('Price must be a non-negative number');
+      return;
+    }
+
+    const askingPriceCents = Math.round(parsedPrice * 100);
+
+    try {
+      setIsSavingListing(true);
+      const response = await fetch(`/api/seller/listings/${editingListing.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          displayTitle: editTitle,
+          askingPriceCents,
+          sellerNotes: editNotes || null,
+          imageUrl: editImageUrl || null,
+          status: editStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update listing');
+      }
+
+      const data = (await response.json()) as { listing: Listing };
+      setListings((prev) => prev.map((l) => (l.id === data.listing.id ? data.listing : l)));
+      setEditingListing(null);
+      setIsEditDialogOpen(false);
+      toast.success('Listing updated');
+    } catch (error) {
+      console.error('Error updating listing:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update listing');
+    } finally {
+      setIsSavingListing(false);
+    }
+  };
+
+  const handleUpdateStatus = async (listing: Listing, nextStatus: 'DRAFT' | 'PUBLISHED') => {
+    try {
+      setIsSavingListing(true);
+      const response = await fetch(`/api/seller/listings/${listing.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update listing status');
+      }
+
+      const data = (await response.json()) as { listing: Listing };
+      setListings((prev) => prev.map((l) => (l.id === data.listing.id ? data.listing : l)));
+      toast.success(
+        nextStatus === 'PUBLISHED' ? 'Listing published' : 'Listing moved back to draft',
+      );
+    } catch (error) {
+      console.error('Error updating listing status:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update listing status');
+    } finally {
+      setIsSavingListing(false);
+    }
+  };
 
   // Handle starting onboarding
   const handleStartOnboarding = async () => {
@@ -348,6 +559,106 @@ function SellerDashboardContent() {
 
         <Card>
           <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>Your Listings</CardTitle>
+                <CardDescription>
+                  Create and manage single-item listings that buyers can purchase directly.
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                + New listing
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              {listings.length === 0 ? (
+                <div className="rounded-md border border-dashed p-4">
+                  <p className="text-sm font-medium">You haven&apos;t listed any items yet.</p>
+                  <p className="text-muted-foreground text-sm">
+                    Create your first listing to start selling. You can always unpublish or edit it
+                    later using the New listing button above.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="py-2 pr-4">Title</th>
+                        <th className="py-2 pr-4">Price</th>
+                        <th className="py-2 pr-4">Status</th>
+                        <th className="py-2 pr-4">Listed</th>
+                        <th className="py-2 pr-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listings.map((listing) => (
+                        <tr key={listing.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4">
+                            <div className="font-medium">{listing.displayTitle}</div>
+                            {listing.sellerNotes && (
+                              <div className="text-muted-foreground line-clamp-2 text-xs">
+                                {listing.sellerNotes}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4">
+                            {(listing.askingPriceCents / 100).toLocaleString('en-US', {
+                              style: 'currency',
+                              currency: listing.currency || 'USD',
+                            })}
+                          </td>
+                          <td className="py-2 pr-4">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                listing.status === 'PUBLISHED'
+                                  ? 'bg-green-100 text-green-800'
+                                  : listing.status === 'DRAFT'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {listing.status.toLowerCase()}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4">
+                            <span className="text-muted-foreground text-xs">
+                              {new Date(listing.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </td>
+                          <td className="py-2 pl-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              {listing.status !== 'SOLD' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => beginEditListing(listing)}
+                                  disabled={isSavingListing}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                  <span className="sr-only">Edit listing</span>
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Stripe Dashboard</CardTitle>
             <CardDescription>
               Access your Stripe Express Dashboard to manage payouts, view transactions, and update
@@ -387,6 +698,150 @@ function SellerDashboardContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Create listing modal */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create listing</DialogTitle>
+              <DialogDescription>
+                Create a single-item listing that buyers can purchase directly. You can publish it
+                once you&apos;re ready.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <Input
+                placeholder="Display title (e.g., Charizard holo – NM)"
+                value={newListingTitle}
+                onChange={(e) => setNewListingTitle(e.target.value)}
+              />
+              <Input
+                placeholder="Price (USD)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newListingPrice}
+                onChange={(e) => setNewListingPrice(e.target.value)}
+              />
+              <textarea
+                placeholder="Optional notes (condition details, etc.)"
+                value={newListingNotes}
+                onChange={(e) => setNewListingNotes(e.target.value)}
+                className="border-input focus-visible:ring-ring bg-background placeholder:text-muted-foreground flex min-h-20 w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
+              />
+              <Input
+                placeholder="Image URL (optional)"
+                value={newListingImageUrl}
+                onChange={(e) => setNewListingImageUrl(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  resetNewListingForm();
+                  setIsCreateDialogOpen(false);
+                }}
+                disabled={isSavingListing}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateListing} disabled={isSavingListing}>
+                {isSavingListing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create listing'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit listing modal */}
+        <Dialog
+          open={isEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open);
+            if (!open) {
+              setEditingListing(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit listing</DialogTitle>
+              <DialogDescription>
+                Update the details and visibility of this listing.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <Input
+                placeholder="Display title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+              <Input
+                placeholder="Price (USD)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+              />
+              <textarea
+                placeholder="Notes"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                className="border-input focus-visible:ring-ring bg-background placeholder:text-muted-foreground flex min-h-20 w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
+              />
+              <Input
+                placeholder="Image URL"
+                value={editImageUrl}
+                onChange={(e) => setEditImageUrl(e.target.value)}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium">Status</span>
+                <select
+                  className="border-input bg-background flex h-9 items-center rounded-md border px-3 text-sm shadow-sm outline-none"
+                  value={editStatus}
+                  onChange={(e) =>
+                    setEditStatus(e.target.value === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT')
+                  }
+                >
+                  <option value="DRAFT">Draft (not visible to buyers)</option>
+                  <option value="PUBLISHED">Published (visible to buyers)</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingListing(null);
+                }}
+                disabled={isSavingListing}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} disabled={isSavingListing || !editingListing}>
+                {isSavingListing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save changes'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AccountLayout>
   );
