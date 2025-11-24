@@ -164,15 +164,33 @@ To test Stripe webhooks locally, you'll need the Stripe CLI:
 # Install Stripe CLI (if not already installed)
 # macOS: brew install stripe/stripe-cli/stripe
 # Or download from: https://stripe.com/docs/stripe-cli
-
-# Login to Stripe CLI
-stripe login
-
-# Forward webhooks to your local server (run in a separate terminal)
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-This will output a webhook signing secret. Update your `.env.local` with:
+**⚠️ Important: Account Mismatch Issue**
+
+The Stripe CLI must be authenticated to the **same Stripe account** as your app's `STRIPE_SECRET_KEY`. If they don't match, webhooks won't be received for your app's payments.
+
+**Option A: Use API key directly (recommended)**
+```bash
+# Load your env and run with explicit API key
+source .env.local && stripe listen --forward-to localhost:3000/api/webhooks/stripe --api-key "$STRIPE_SECRET_KEY"
+```
+
+**Option B: Login to correct account**
+```bash
+# First, check which account the CLI is using
+stripe config --list | grep account_id
+
+# Verify your app's account
+source .env.local && curl -s https://api.stripe.com/v1/account -u "$STRIPE_SECRET_KEY:" | grep '"id"'
+
+# If they don't match, logout and re-login to the correct account
+stripe logout
+stripe login
+# Then authenticate with the same account that owns your STRIPE_SECRET_KEY
+```
+
+After starting the listener, it will output a webhook signing secret. Update your `.env.local`:
 ```bash
 STRIPE_WEBHOOK_SECRET="whsec_[from-stripe-cli-output]"
 ```
@@ -244,9 +262,29 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 - Restart your dev server after updating `STRIPE_WEBHOOK_SECRET`
 - Check server logs for webhook events and errors
 
+### Stripe CLI not receiving webhooks for your payments
+
+**This is usually an account mismatch issue.** The CLI might be logged into a different Stripe account than your app.
+
+1. Check which account the CLI is using:
+   ```bash
+   stripe config --list | grep account_id
+   ```
+
+2. Check which account your app uses:
+   ```bash
+   source .env.local && curl -s https://api.stripe.com/v1/account -u "$STRIPE_SECRET_KEY:" | grep '"id"'
+   ```
+
+3. If the account IDs don't match, use Option A from the webhook setup:
+   ```bash
+   source .env.local && stripe listen --forward-to localhost:3000/api/webhooks/stripe --api-key "$STRIPE_SECRET_KEY"
+   ```
+
 ### Test payments not updating order status
 
 - Ensure webhooks are being received (check `stripe listen` output)
+- **Verify the CLI is on the same Stripe account as your app** (see above)
 - Check that the webhook secret is correctly configured
 - Verify the order exists in the database with the correct `stripeSessionId`
 - Check server logs for webhook processing errors
@@ -344,7 +382,8 @@ To test the payment flow:
 
 1. **Start the Stripe CLI webhook listener** (in a separate terminal):
    ```bash
-   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   # Use your app's API key to ensure correct account
+   source .env.local && stripe listen --forward-to localhost:3000/api/webhooks/stripe --api-key "$STRIPE_SECRET_KEY"
    ```
 
 2. **Update your `.env.local`** with the webhook secret from the CLI output
@@ -355,9 +394,13 @@ To test the payment flow:
 
 5. **Make a test payment** using Stripe test card: `4242 4242 4242 4242`
 
-6. **Check the webhook logs** in your terminal and server logs
+6. **Check the webhook logs** - you should see:
+   - In CLI terminal: `checkout.session.completed` with `[200]` response
+   - In server logs: `[Webhook] Listing marked as SOLD` and `[Webhook] Order ID: ... Status: PAID`
 
 7. **View your purchases** at `/purchases` to see the order status update
+
+**Troubleshooting**: If webhooks aren't being received, see "Stripe CLI not receiving webhooks" in the Troubleshooting section - it's usually an account mismatch issue.
 
 ## 📄 Key Pages & Routes
 
