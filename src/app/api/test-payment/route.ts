@@ -12,6 +12,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
 });
 
+/**
+ * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)
+ *
+ * This creates:
+ * 1. A test listing (marked as PUBLISHED)
+ * 2. An order linked to that listing
+ * 3. A Stripe checkout session with proper metadata
+ *
+ * When payment completes, the webhook should:
+ * - Update the order to PAID
+ * - Mark the listing as SOLD
+ */
 export async function POST(request: Request) {
   try {
     // 1. Check authentication
@@ -38,24 +50,46 @@ export async function POST(request: Request) {
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;
 
-    // 2. Get or create user in database
+    // 2. Get or create user in database (as both seller and buyer for test)
     const user = await getOrCreateUser(userId);
 
-    // 3. Create order in our system first
-    const order = await prisma.order.create({
+    // 3. Create a test listing (user sells to themselves for testing)
+    const testListing = await prisma.listing.create({
       data: {
-        buyerId: userId,
-        description: 'Test Payment - Stripe Integration',
-        amountCents: 100, // $1.00
+        sellerId: userId,
+        displayTitle: `Test Pokemon Card - ${new Date().toISOString().slice(0, 16)}`,
+        sellerNotes: 'This is a test listing created for webhook testing (PM-39)',
+        askingPriceCents: 100, // $1.00
         currency: 'USD',
-        status: 'PENDING',
-        isTestPayment: true,
-        sellerName: 'Pokemon Marketplace', // Platform as seller for now
-        purchaseTimezone,
+        status: 'PUBLISHED',
       },
     });
 
-    // 4. Log order creation
+    console.log('[Test Payment] Created test listing:', testListing.id);
+
+    // 4. Create order linked to the test listing
+    const order = await prisma.order.create({
+      data: {
+        buyerId: userId,
+        sellerId: userId, // Self-purchase for testing
+        sellerName: user.displayName || 'Test Seller',
+        description: `Test Listing Purchase - ${testListing.displayTitle}`,
+        amountCents: testListing.askingPriceCents,
+        currency: testListing.currency,
+        status: 'PENDING',
+        isTestPayment: true,
+        purchaseTimezone,
+        // Link to the listing (PM-33/PM-39)
+        listingId: testListing.id,
+        snapshotListingDisplayTitle: testListing.displayTitle,
+        snapshotListingImageUrl: testListing.imageUrl,
+        snapshotListingPriceCents: testListing.askingPriceCents,
+      },
+    });
+
+    console.log('[Test Payment] Created order:', order.id, 'linked to listing:', testListing.id);
+
+    // 5. Log order creation
     await logAuditEvent({
       entityType: 'Order',
       entityId: order.id,
@@ -65,12 +99,13 @@ export async function POST(request: Request) {
       userAgent,
       changes: {
         orderId: order.id,
+        listingId: testListing.id,
         amountCents: order.amountCents,
         isTestPayment: true,
       },
     });
 
-    // 5. Get or create Stripe customer
+    // 6. Get or create Stripe customer
     const customerId = await getOrCreateStripeCustomer(
       userId,
       userEmail,
@@ -79,7 +114,7 @@ export async function POST(request: Request) {
 
     const baseUrl = getBaseUrl();
 
-    // 6. Create Stripe checkout session
+    // 7. Create Stripe checkout session with listing metadata (matches listing checkout flow)
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -88,37 +123,39 @@ export async function POST(request: Request) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `Order #${order.id.slice(-8)}`,
-              description: order.description,
+              name: testListing.displayTitle,
+              description: 'Test listing purchase for webhook verification',
             },
-            unit_amount: order.amountCents, // Already in cents
+            unit_amount: order.amountCents,
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
       payment_intent_data: {
-        description: `${order.description} - Order #${order.id.slice(-8)}`,
+        description: `Test Listing Purchase - ${testListing.displayTitle}`,
         metadata: {
           orderId: order.id,
-          userId: userId,
+          buyerId: userId,
+          listingId: testListing.id,
           isTestPayment: 'true',
         },
       },
+      // This metadata is what the webhook reads
       metadata: {
         orderId: order.id,
-        userId: userId,
+        buyerId: userId,
+        listingId: testListing.id,
         isTestPayment: 'true',
       },
-      success_url: `${baseUrl}/test-stripe/success?orderId=${order.id}`,
+      success_url: `${baseUrl}/test-stripe/success?orderId=${order.id}&listingId=${testListing.id}`,
       cancel_url: `${baseUrl}/test-stripe`,
     });
 
     console.log('[Test Payment] Created checkout session:', checkoutSession.id);
     console.log('[Test Payment] Session metadata:', checkoutSession.metadata);
-    console.log('[Test Payment] Order ID:', order.id);
 
-    // 7. Link Stripe session to our order
+    // 8. Link Stripe session to our order
     await prisma.order.update({
       where: { id: order.id },
       data: { stripeSessionId: checkoutSession.id },
