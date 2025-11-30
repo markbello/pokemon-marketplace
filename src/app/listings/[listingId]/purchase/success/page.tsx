@@ -1,7 +1,17 @@
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { auth0 } from '@/lib/auth0';
-import { logAuditEvent } from '@/lib/audit';
+
+/**
+ * Listing Purchase Success Page (PM-39 - Read-Only)
+ *
+ * This page displays the purchase confirmation AFTER payment.
+ * It does NOT update any state - the webhook is the sole source of truth.
+ *
+ * The webhook handler (checkout.session.completed) is responsible for:
+ * - Marking the order as PAID
+ * - Marking the listing as SOLD
+ */
 
 export default async function ListingPurchaseSuccessPage({
   params,
@@ -24,62 +34,17 @@ export default async function ListingPurchaseSuccessPage({
 
   const buyerId = session.user.sub;
 
-  // Confirm order and listing and mark them appropriately
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({
-      where: { id: orderId },
-    });
-
-    if (!order || order.buyerId !== buyerId || order.listingId !== listingId) {
-      throw new Error('Order not found or does not belong to current user');
-    }
-
-    // Load listing, but tolerate missing listing in case of schema changes
-    const listing = order.listingId
-      ? await tx.listing.findUnique({ where: { id: order.listingId } })
-      : null;
-
-    // Update order if still pending
-    const updatedOrder =
-      order.status === 'PAID'
-        ? order
-        : await tx.order.update({
-            where: { id: order.id },
-            data: {
-              status: 'PAID',
-              updatedAt: new Date(),
-            },
-          });
-
-    // Mark listing sold if it is still published
-    if (listing && listing.status === 'PUBLISHED') {
-      await tx.listing.update({
-        where: { id: listing.id },
-        data: {
-          status: 'SOLD',
-        },
-      });
-    }
-
-    return { order: updatedOrder, listing };
+  // Read-only: Just fetch the current state, don't update anything
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { listing: true },
   });
 
-  // Log audit event (outside transaction)
-  await logAuditEvent({
-    entityType: 'Order',
-    entityId: orderId,
-    action: 'PAYMENT_COMPLETED_REDIRECT',
-    userId: buyerId,
-    changes: {
-      status: 'PAID',
-      listingId,
-    },
-    metadata: {
-      source: 'redirect_success',
-    },
-  });
+  if (!order || order.buyerId !== buyerId || order.listingId !== listingId) {
+    notFound();
+  }
 
-  const { order, listing } = result;
+  const listing = order.listing;
 
   const displayTitle = order.snapshotListingDisplayTitle ?? listing?.displayTitle ?? 'Listing';
   const imageUrl = order.snapshotListingImageUrl ?? listing?.imageUrl ?? null;
