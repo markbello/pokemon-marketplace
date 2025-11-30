@@ -49,11 +49,17 @@ model Order {
   // Payment tracking
   stripeSessionId       String?     @unique
   stripePaymentIntentId String?     @unique
+  stripeCustomerId      String?     // For fetching customer addresses from Stripe
   
   // Order details (store amounts in cents to match Stripe)
   description           String      // "Test Payment - Stripe Integration"
-  amountCents           Int         // e.g., 100 for $1.00
   currency              String      @default("USD")
+  
+  // Amounts (PM-56: all amounts in cents)
+  subtotalCents         Int         // Item price before tax/shipping
+  taxCents              Int         @default(0)  // Tax calculated by Stripe Tax
+  shippingCents         Int         @default(0)  // Shipping cost
+  totalCents            Int         // Final amount charged (subtotal + tax + shipping)
   
   // Status tracking
   status                OrderStatus @default(PENDING)
@@ -79,6 +85,7 @@ model Order {
   @@index([status, createdAt])
   @@index([isTestPayment, createdAt])
   @@index([listingId])
+  @@index([stripeCustomerId])
 }
 
 model AuditLog {

@@ -13,12 +13,46 @@ export async function GET() {
 
     const userId = session.user.sub;
 
+    // Fetch listings with associated orders for sold items
     const listings = await prisma.listing.findMany({
       where: { sellerId: userId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        // Include the order that purchased this listing (for SOLD items)
+        orders: {
+          where: { status: 'PAID' },
+          select: {
+            id: true,
+            status: true,
+            totalCents: true,
+            currency: true,
+            createdAt: true,
+            buyer: {
+              select: {
+                displayName: true,
+              },
+            },
+          },
+          take: 1, // Single-item listings only have one order
+        },
+      },
     });
 
-    return NextResponse.json({ listings });
+    // Transform to include soldAt and orderId for convenience
+    const listingsWithSaleInfo = listings.map((listing) => {
+      const paidOrder = listing.orders[0];
+      return {
+        ...listing,
+        orders: undefined, // Remove the raw orders array
+        // Sale info (only populated if SOLD)
+        soldAt: paidOrder?.createdAt || null,
+        orderId: paidOrder?.id || null,
+        buyerName: paidOrder?.buyer?.displayName || null,
+        saleTotalCents: paidOrder?.totalCents || null,
+      };
+    });
+
+    return NextResponse.json({ listings: listingsWithSaleInfo });
   } catch (error) {
     console.error('[SellerListings][GET] Error fetching listings:', error);
 
@@ -98,7 +132,7 @@ export async function POST(request: Request) {
         currency: currency.trim().toUpperCase(),
         sellerNotes: sellerNotes?.trim() || null,
         imageUrl: imageUrl?.trim() || null,
-        status: 'DRAFT',
+        status: 'PUBLISHED', // Default to published - sellers can move to draft if needed
       },
     });
 

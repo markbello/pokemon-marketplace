@@ -48,7 +48,7 @@ export default async function ListingPurchaseSuccessPage({
 
   const displayTitle = order.snapshotListingDisplayTitle ?? listing?.displayTitle ?? 'Listing';
   const imageUrl = order.snapshotListingImageUrl ?? listing?.imageUrl ?? null;
-  const priceCents = order.snapshotListingPriceCents ?? order.amountCents ?? 0;
+  const priceCents = order.snapshotListingPriceCents ?? order.totalCents ?? 0;
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-12">

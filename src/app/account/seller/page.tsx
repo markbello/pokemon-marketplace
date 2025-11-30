@@ -24,7 +24,9 @@ import {
   Store,
   AlertCircle,
   Pencil,
+  Package,
 } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 interface SellerStatus {
@@ -50,6 +52,11 @@ interface Listing {
   imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  // Sale info (populated when SOLD)
+  soldAt: string | null;
+  orderId: string | null;
+  buyerName: string | null;
+  saleTotalCents: number | null;
 }
 
 function SellerDashboardContent() {
@@ -589,7 +596,7 @@ function SellerDashboardContent() {
                         <th className="py-2 pr-4">Title</th>
                         <th className="py-2 pr-4">Price</th>
                         <th className="py-2 pr-4">Status</th>
-                        <th className="py-2 pr-4">Listed</th>
+                        <th className="py-2 pr-4">Activity</th>
                         <th className="py-2 pr-4 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -603,46 +610,84 @@ function SellerDashboardContent() {
                                 {listing.sellerNotes}
                               </div>
                             )}
+                            {listing.status === 'SOLD' && listing.buyerName && (
+                              <div className="text-xs text-green-600 mt-0.5">
+                                Sold to {listing.buyerName}
+                              </div>
+                            )}
                           </td>
                           <td className="py-2 pr-4">
-                            {(listing.askingPriceCents / 100).toLocaleString('en-US', {
-                              style: 'currency',
-                              currency: listing.currency || 'USD',
-                            })}
+                            <div>
+                              {(listing.askingPriceCents / 100).toLocaleString('en-US', {
+                                style: 'currency',
+                                currency: listing.currency || 'USD',
+                              })}
+                            </div>
+                            {listing.status === 'SOLD' && listing.saleTotalCents && listing.saleTotalCents !== listing.askingPriceCents && (
+                              <div className="text-xs text-muted-foreground">
+                                Total: {(listing.saleTotalCents / 100).toLocaleString('en-US', {
+                                  style: 'currency',
+                                  currency: listing.currency || 'USD',
+                                })}
+                              </div>
+                            )}
                           </td>
                           <td className="py-2 pr-4">
                             <span
                               className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                                 listing.status === 'PUBLISHED'
-                                  ? 'bg-green-100 text-green-800'
+                                  ? 'bg-blue-100 text-blue-800'
                                   : listing.status === 'DRAFT'
                                     ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                    : 'bg-green-100 text-green-800'
                               }`}
                             >
-                              {listing.status.toLowerCase()}
+                              {listing.status === 'SOLD' ? '✓ Sold' : listing.status === 'PUBLISHED' ? 'Published' : 'Draft'}
                             </span>
                           </td>
                           <td className="py-2 pr-4">
                             <span className="text-muted-foreground text-xs">
-                              {new Date(listing.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
+                              {listing.status === 'SOLD' && listing.soldAt ? (
+                                <>
+                                  Sold {new Date(listing.soldAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </>
+                              ) : (
+                                <>
+                                  Listed {new Date(listing.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </>
+                              )}
                             </span>
                           </td>
                           <td className="py-2 pl-4 text-right">
                             <div className="flex justify-end gap-2">
-                              {listing.status !== 'SOLD' && (
+                              {listing.status === 'SOLD' && listing.orderId ? (
                                 <Button
-                                  variant="ghost"
-                                  size="icon"
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <Link href={`/orders/${listing.orderId}`}>
+                                    <Package className="mr-1 h-3 w-3" />
+                                    View Order
+                                  </Link>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => beginEditListing(listing)}
                                   disabled={isSavingListing}
                                 >
-                                  <Pencil className="h-4 w-4" />
-                                  <span className="sr-only">Edit listing</span>
+                                  <Pencil className="mr-1 h-3 w-3" />
+                                  Edit
                                 </Button>
                               )}
                             </div>
@@ -812,8 +857,8 @@ function SellerDashboardContent() {
                     setEditStatus(e.target.value === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT')
                   }
                 >
-                  <option value="DRAFT">Draft (not visible to buyers)</option>
                   <option value="PUBLISHED">Published (visible to buyers)</option>
+                  <option value="DRAFT">Draft (not visible to buyers)</option>
                 </select>
               </div>
             </div>

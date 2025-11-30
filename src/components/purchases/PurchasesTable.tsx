@@ -9,12 +9,20 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/currency';
 import { FormattedDate } from '@/components/FormattedDate';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import type { Order } from '@prisma/client';
 
 interface PurchasesTableProps {
@@ -48,7 +56,7 @@ const columns: ColumnDef<Order>[] = [
     },
   },
   {
-    accessorKey: 'amountCents',
+    accessorKey: 'totalCents',
     header: ({ column }) => {
       return (
         <Button
@@ -63,7 +71,9 @@ const columns: ColumnDef<Order>[] = [
     },
     cell: ({ row }) => {
       return (
-        <span className="font-semibold">{formatCurrency(row.original.amountCents, row.original.currency)}</span>
+        <span className="font-semibold">
+          {formatCurrency(row.original.totalCents, row.original.currency)}
+        </span>
       );
     },
   },
@@ -129,8 +139,11 @@ const columns: ColumnDef<Order>[] = [
     },
     cell: ({ row }) => {
       return (
-        <span className="text-sm text-muted-foreground">
-          <FormattedDate date={row.original.createdAt} purchaseTimezone={row.original.purchaseTimezone} />
+        <span className="text-muted-foreground text-sm">
+          <FormattedDate
+            date={row.original.createdAt}
+            purchaseTimezone={row.original.purchaseTimezone}
+          />
         </span>
       );
     },
@@ -146,7 +159,21 @@ const columns: ColumnDef<Order>[] = [
           </Badge>
         );
       }
-      return <span className="text-sm text-muted-foreground">—</span>;
+      return <span className="text-muted-foreground text-sm">—</span>;
+    },
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row }) => {
+      return (
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/orders/${row.original.id}`}>
+            View
+            <ExternalLink className="ml-1 h-3 w-3" />
+          </Link>
+        </Button>
+      );
     },
   },
 ];
@@ -204,4 +231,3 @@ export function PurchasesTable({ orders }: PurchasesTableProps) {
     </div>
   );
 }
-
