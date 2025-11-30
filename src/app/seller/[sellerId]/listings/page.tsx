@@ -51,18 +51,16 @@ export default async function SellerListingsPage({ params }: SellerListingsPageP
           {listings.map((listing) => (
             <div
               key={listing.id}
-              className="border bg-card text-card-foreground flex flex-col overflow-hidden rounded-lg shadow-sm"
+              className="border bg-card text-card-foreground flex flex-col overflow-hidden rounded-xl shadow-sm"
             >
-              {listing.imageUrl && (
-                <div className="bg-muted/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={listing.imageUrl}
-                    alt={listing.displayTitle}
-                    className="h-48 w-full object-cover"
-                  />
-                </div>
-              )}
+              <div className="bg-muted/30">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={listing.imageUrl || '/kado-placeholder.jpg'}
+                  alt={listing.displayTitle}
+                  className="aspect-[4/3] w-full object-contain"
+                />
+              </div>
               <div className="flex flex-1 flex-col space-y-2 p-4">
                 <h2 className="line-clamp-2 text-base font-semibold">{listing.displayTitle}</h2>
                 {listing.sellerNotes && (

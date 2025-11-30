@@ -185,7 +185,7 @@ export async function sendOrderConfirmationEmail(
     // TODO: Implement actual email sending when email service is configured
     // Example with Resend:
     // await resend.emails.send({
-    //   from: 'Pokemon Marketplace <orders@pokemonmarketplace.com>',
+    //   from: 'kado.io <orders@kado.io>',
     //   to: emailData.customerEmail,
     //   subject: `Order Confirmation #${emailData.orderNumber}`,
     //   react: OrderConfirmationEmail({ ...emailData }),

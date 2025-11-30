@@ -1,23 +1,23 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import { Auth0Provider } from '@auth0/nextjs-auth0';
 import Navbar from '@/components/layout/Navbar';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const nunito = Nunito({
+  variable: '--font-nunito',
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
-  title: 'Pokemon Marketplace',
-  description: 'Buy and sell Pokemon cards',
+  title: 'kado.io',
+  description: 'Buy and sell trading cards with ease',
+  icons: {
+    icon: '/kado-favicon.jpg',
+    apple: '/kado-favicon.jpg',
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${nunito.variable} antialiased`}>
         <Auth0Provider>
           <div className="flex min-h-screen flex-col">
             <Navbar />

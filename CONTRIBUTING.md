@@ -1,6 +1,6 @@
-# Contributing to Pokemon Marketplace
+# Contributing to kado.io
 
-Thank you for your interest in contributing to the Pokemon Marketplace! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to kado.io! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -128,7 +128,7 @@ Follow conventional commits format:
 type(scope): description
 
 # Examples:
-feat(auth): add Pokemon trainer registration
+feat(auth): add card collector registration
 fix(search): resolve filter reset bug
 docs(readme): update setup instructions
 ```
@@ -161,9 +161,9 @@ Example:
 
 ```bash
 # Good AI-generated issue
-gh issue create --title "PM-45: Implement Pokemon card condition validation" \
+gh issue create --title "PM-45: Implement card condition validation" \
   --label "priority: medium,type: feature,component: backend" \
-  --body "Implement server-side validation for Pokemon card condition ratings..."
+  --body "Implement server-side validation for card condition ratings..."
 
 # Good AI-generated branch
 git checkout -b feature/PM-45-card-condition-validation
@@ -242,4 +242,4 @@ git push origin feature/PM-123-description
 
 ---
 
-Thank you for contributing to Pokemon Marketplace! 🎉
+Thank you for contributing to kado.io! 🎉

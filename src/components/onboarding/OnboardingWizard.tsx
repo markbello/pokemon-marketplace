@@ -198,7 +198,7 @@ export function OnboardingWizard() {
           <CardDescription>
             {isEditing
               ? 'Update your profile information and preferences'
-              : "Let's set up your account so you can start buying and selling Pokemon cards"}
+              : "Let's set up your account so you can start buying and selling trading cards"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

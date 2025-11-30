@@ -87,7 +87,7 @@ export default function UserMenu() {
 
   // Show loading skeleton until auth state is confirmed
   if (isLoading || !hasCheckedAuth) {
-    return <div className="bg-muted h-10 w-10 animate-pulse rounded-full" />;
+    return <div className="bg-muted h-12 w-12 animate-pulse rounded-full" />;
   }
 
   // If no user, show sign in button only
@@ -101,7 +101,7 @@ export default function UserMenu() {
 
   // Show skeleton while loading fresh data to check for avatar
   if (!hasLoadedFreshData) {
-    return <div className="bg-muted border-border h-10 w-10 rounded-full border" />;
+    return <div className="bg-muted border-border h-12 w-12 rounded-full border" />;
   }
 
   // Use fresh user data if available (from Management API), otherwise fall back to session user
@@ -123,7 +123,7 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="border-border focus:ring-ring relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border transition-opacity hover:opacity-80 focus:ring-2 focus:ring-offset-2 focus:outline-none">
+        <button className="border-border focus:ring-ring relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border transition-opacity hover:opacity-80 focus:ring-2 focus:ring-offset-2 focus:outline-none">
           <UserAvatar
             publicId={avatarPublicId}
             avatarUrl={avatarUrl || displayUser?.picture || undefined}

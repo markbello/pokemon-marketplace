@@ -1,6 +1,6 @@
-# Pokemon Marketplace
+# kado.io
 
-A modern, secure marketplace for buying and selling Pokemon trading cards built with Next.js.
+A modern, secure marketplace for buying and selling trading cards built with Next.js.
 
 ## 🚀 Features
 
@@ -28,7 +28,7 @@ A modern, secure marketplace for buying and selling Pokemon trading cards built 
 - Node.js 18+
 - npm or yarn
 - **Vercel CLI**: `npm install -g vercel`
-- Access to the pokemonmarketplace Vercel team (contact team lead)
+- Access to the kado.io Vercel team (contact team lead)
 - Auth0 account credentials (get from team lead)
 
 ### Setup Instructions

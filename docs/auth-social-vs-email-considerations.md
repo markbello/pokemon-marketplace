@@ -1,6 +1,6 @@
 # Social Sign-In vs Email/Password: Limitations & Considerations
 
-This document outlines the key limitations and considerations when users choose social sign-in versus creating an account with email/password in the Pokemon Marketplace.
+This document outlines the key limitations and considerations when users choose social sign-in versus creating an account with email/password in kado.io.
 
 ## Overview
 
