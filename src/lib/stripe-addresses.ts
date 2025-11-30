@@ -59,20 +59,28 @@ export async function getOrderAddresses(orderId: string): Promise<OrderAddresses
   // Try session first (most recent/accurate for this specific order)
   if (order.stripeSessionId) {
     try {
-      const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId, {
-        expand: ['customer_details', 'shipping_details'],
-      });
+      const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
 
-      if (session.shipping_details?.address) {
+      // shipping_details is available on completed sessions but TypeScript types may not include it
+      // Cast to access the property that exists at runtime
+      const sessionWithShipping = session as Stripe.Checkout.Session & {
+        shipping_details?: {
+          address?: Stripe.Address;
+          name?: string;
+        } | null;
+      };
+      const shippingDetails = sessionWithShipping.shipping_details;
+
+      if (shippingDetails?.address) {
         addresses.shipping = {
-          line1: session.shipping_details.address.line1,
-          line2: session.shipping_details.address.line2,
-          city: session.shipping_details.address.city,
-          state: session.shipping_details.address.state,
-          postal_code: session.shipping_details.address.postal_code,
-          country: session.shipping_details.address.country,
+          line1: shippingDetails.address.line1 ?? null,
+          line2: shippingDetails.address.line2 ?? null,
+          city: shippingDetails.address.city ?? null,
+          state: shippingDetails.address.state ?? null,
+          postal_code: shippingDetails.address.postal_code ?? null,
+          country: shippingDetails.address.country ?? null,
         };
-        addresses.customerName = session.shipping_details.name || null;
+        addresses.customerName = shippingDetails.name || null;
       }
 
       if (session.customer_details) {
@@ -81,12 +89,12 @@ export async function getOrderAddresses(orderId: string): Promise<OrderAddresses
 
         if (session.customer_details.address) {
           addresses.billing = {
-            line1: session.customer_details.address.line1,
-            line2: session.customer_details.address.line2,
-            city: session.customer_details.address.city,
-            state: session.customer_details.address.state,
-            postal_code: session.customer_details.address.postal_code,
-            country: session.customer_details.address.country,
+            line1: session.customer_details.address.line1 ?? null,
+            line2: session.customer_details.address.line2 ?? null,
+            city: session.customer_details.address.city ?? null,
+            state: session.customer_details.address.state ?? null,
+            postal_code: session.customer_details.address.postal_code ?? null,
+            country: session.customer_details.address.country ?? null,
           };
         }
 
@@ -134,13 +142,13 @@ export async function getOrderAddresses(orderId: string): Promise<OrderAddresses
       }
 
       if (!addresses.customerName) {
-        addresses.customerName = customer.name;
+        addresses.customerName = customer.name ?? null;
       }
       if (!addresses.customerEmail) {
-        addresses.customerEmail = customer.email;
+        addresses.customerEmail = customer.email ?? null;
       }
       if (!addresses.customerPhone) {
-        addresses.customerPhone = customer.phone;
+        addresses.customerPhone = customer.phone ?? null;
       }
     } catch (err) {
       console.error('[StripeAddresses] Error fetching customer:', err);
@@ -173,9 +181,9 @@ export async function getCustomerForOrder(orderId: string): Promise<{
     }
 
     return {
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
+      name: customer.name ?? null,
+      email: customer.email ?? null,
+      phone: customer.phone ?? null,
     };
   } catch (err) {
     console.error('[StripeAddresses] Error fetching customer:', err);
@@ -194,7 +202,9 @@ export function formatAddress(address: StripeAddress | null): string[] {
   if (address.line1) lines.push(address.line1);
   if (address.line2) lines.push(address.line2);
 
-  const cityStateZip = [address.city, address.state, address.postal_code].filter(Boolean).join(', ');
+  const cityStateZip = [address.city, address.state, address.postal_code]
+    .filter(Boolean)
+    .join(', ');
 
   if (cityStateZip) lines.push(cityStateZip);
   if (address.country) lines.push(address.country);
@@ -232,4 +242,3 @@ export async function getSessionTaxInfo(sessionId: string): Promise<{
     return null;
   }
 }
-

@@ -127,14 +127,9 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             Check your terminal for webhook logs: <code>[Webhook] Listing marked as SOLD</code>
           </p>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:flex-wrap">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:justify-center">
             {!webhookProcessed && (
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="animate-pulse"
-              >
+              <Button asChild variant="outline" size="lg" className="animate-pulse">
                 <Link
                   href={`/test-stripe/success?orderId=${params.orderId}&listingId=${params.listingId}`}
                 >

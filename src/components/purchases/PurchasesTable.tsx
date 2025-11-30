@@ -9,7 +9,14 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/currency';
 import { FormattedDate } from '@/components/FormattedDate';
@@ -64,7 +71,9 @@ const columns: ColumnDef<Order>[] = [
     },
     cell: ({ row }) => {
       return (
-        <span className="font-semibold">{formatCurrency(row.original.totalCents, row.original.currency)}</span>
+        <span className="font-semibold">
+          {formatCurrency(row.original.totalCents, row.original.currency)}
+        </span>
       );
     },
   },
@@ -130,8 +139,11 @@ const columns: ColumnDef<Order>[] = [
     },
     cell: ({ row }) => {
       return (
-        <span className="text-sm text-muted-foreground">
-          <FormattedDate date={row.original.createdAt} purchaseTimezone={row.original.purchaseTimezone} />
+        <span className="text-muted-foreground text-sm">
+          <FormattedDate
+            date={row.original.createdAt}
+            purchaseTimezone={row.original.purchaseTimezone}
+          />
         </span>
       );
     },
@@ -147,7 +159,7 @@ const columns: ColumnDef<Order>[] = [
           </Badge>
         );
       }
-      return <span className="text-sm text-muted-foreground">—</span>;
+      return <span className="text-muted-foreground text-sm">—</span>;
     },
   },
   {
@@ -219,4 +231,3 @@ export function PurchasesTable({ orders }: PurchasesTableProps) {
     </div>
   );
 }
-

@@ -50,7 +50,7 @@ export interface OrderEmailData {
  * Format a Stripe address as display lines
  */
 function formatAddressLines(
-  address: OrderAddresses['shipping'] | OrderAddresses['billing']
+  address: OrderAddresses['shipping'] | OrderAddresses['billing'],
 ): string[] | null {
   if (!address) return null;
 
@@ -70,9 +70,7 @@ function formatAddressLines(
 /**
  * Get complete order data formatted for email templates
  */
-export async function getOrderDataForEmail(
-  orderId: string
-): Promise<OrderEmailData | null> {
+export async function getOrderDataForEmail(orderId: string): Promise<OrderEmailData | null> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -101,8 +99,7 @@ export async function getOrderDataForEmail(
     orderDate: order.createdAt,
 
     // Product info
-    productName:
-      order.snapshotListingDisplayTitle || order.description || 'Order',
+    productName: order.snapshotListingDisplayTitle || order.description || 'Order',
     productImageUrl: order.snapshotListingImageUrl,
     sellerName: order.sellerName,
 
@@ -124,8 +121,7 @@ export async function getOrderDataForEmail(
     // Formatted amounts
     formattedSubtotal: formatCurrency(subtotalCents, order.currency),
     formattedTax: taxCents > 0 ? formatCurrency(taxCents, order.currency) : null,
-    formattedShipping:
-      shippingCents > 0 ? formatCurrency(shippingCents, order.currency) : null,
+    formattedShipping: shippingCents > 0 ? formatCurrency(shippingCents, order.currency) : null,
     formattedTotal: formatCurrency(totalCents, order.currency),
 
     // Status
@@ -173,7 +169,7 @@ export async function getOrderNotificationData(orderId: string): Promise<{
  * Implementation will depend on email service (e.g., Resend, SendGrid)
  */
 export async function sendOrderConfirmationEmail(
-  orderId: string
+  orderId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const emailData = await getOrderDataForEmail(orderId);
@@ -217,7 +213,7 @@ export async function sendOrderConfirmationEmail(
 export async function sendShippingNotificationEmail(
   orderId: string,
   trackingNumber?: string,
-  carrier?: string
+  carrier?: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const emailData = await getOrderDataForEmail(orderId);
@@ -247,4 +243,3 @@ export async function sendShippingNotificationEmail(
     };
   }
 }
-
