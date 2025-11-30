@@ -15,8 +15,8 @@ Thank you for your interest in contributing to kado.io! This document provides g
 
 ```bash
 # Clone the repository
-git clone https://github.com/markbello/kado-marketplace.git
-cd kado-marketplace
+git clone https://github.com/markbello/pokemon-marketplace.git
+cd pokemon-marketplace
 
 # Install dependencies
 npm install
@@ -190,7 +190,7 @@ git checkout -b feature/PM-45-card-condition-validation
 
 - **GitHub Issues**: Bug reports and feature requests
 - **Slack #dev**: Quick questions and discussions
-- **Jira Project**: https://kado-io.atlassian.net
+- **Jira Project**: https://pokemonmarketplace.atlassian.net
 
 ### Code Review
 

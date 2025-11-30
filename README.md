@@ -37,8 +37,8 @@ A modern, secure marketplace for buying and selling trading cards built with Nex
 
 ```bash
 # Clone the repository
-git clone https://github.com/markbello/kado-marketplace.git
-cd kado-marketplace
+git clone https://github.com/markbello/pokemon-marketplace.git
+cd pokemon-marketplace
 
 # Install dependencies
 npm install
@@ -101,7 +101,7 @@ docker compose up -d db
 2. Set `DATABASE_URL` in `.env.local` to point at the local DB:
 
 ```bash
-DATABASE_URL="postgresql://kado:kado@localhost:5432/kado_marketplace_dev?schema=public"
+DATABASE_URL="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
 ```
 
 3. Apply all existing migrations and generate the Prisma client:
@@ -313,7 +313,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 3. **Clone and Setup:**
    ```bash
    git clone [repo]
-   cd kado-marketplace
+   cd pokemon-marketplace
    npm install
    ```
 
@@ -350,14 +350,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## 🔗 Links
 
-- **Jira Project**: https://kado-io.atlassian.net/jira/software/projects/PM
+- **Jira Project**: https://pokemonmarketplace.atlassian.net/jira/software/projects/PM
 - **Figma Designs**: [Link to be added]
 - **Staging Environment**: [Link to be added]
 - **Production**: [Link to be added]
 
 ## 📞 Support
 
-For questions or issues, please create a ticket in our [Jira project](https://kado-io.atlassian.net) or reach out in the #dev Slack channel.
+For questions or issues, please create a ticket in our [Jira project](https://pokemonmarketplace.atlassian.net) or reach out in the #dev Slack channel.
 
 ## 🤝 Contributing
 
