@@ -62,7 +62,9 @@ export default function TestStripePage() {
           )}
           
           <p className="mb-6 text-muted-foreground text-lg">
-            Click the button to test a $1 payment through Stripe
+            Click the button to test a $1 payment through Stripe.
+            <br />
+            <span className="text-sm">Includes shipping address collection and automatic tax calculation.</span>
           </p>
           
           <Button
@@ -97,8 +99,24 @@ export default function TestStripePage() {
               <li>
                 <strong>CVC:</strong> Any 3 digits (e.g., 123)
               </li>
+            </ul>
+            
+            <h3 className="mt-4 mb-2 font-semibold">Test Shipping Address</h3>
+            <p className="mb-2 text-sm text-muted-foreground">
+              You can use any US address. For testing tax calculation:
+            </p>
+            <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
               <li>
-                <strong>ZIP:</strong> Any 5 digits (e.g., 12345)
+                <strong>Street:</strong> 123 Main St
+              </li>
+              <li>
+                <strong>City:</strong> New York (or any US city)
+              </li>
+              <li>
+                <strong>State:</strong> NY (or any US state)
+              </li>
+              <li>
+                <strong>ZIP:</strong> 10001 (or any valid ZIP)
               </li>
             </ul>
           </div>

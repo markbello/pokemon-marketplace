@@ -68,13 +68,15 @@ export async function POST(request: Request) {
     console.log('[Test Payment] Created test listing:', testListing.id);
 
     // 4. Create order linked to the test listing
+    // subtotalCents = item price, totalCents = same initially (webhook updates with tax/shipping)
     const order = await prisma.order.create({
       data: {
         buyerId: userId,
         sellerId: userId, // Self-purchase for testing
         sellerName: user.displayName || 'Test Seller',
         description: `Test Listing Purchase - ${testListing.displayTitle}`,
-        amountCents: testListing.askingPriceCents,
+        subtotalCents: testListing.askingPriceCents,
+        totalCents: testListing.askingPriceCents, // Updated by webhook with actual amount
         currency: testListing.currency,
         status: 'PENDING',
         isTestPayment: true,
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
       changes: {
         orderId: order.id,
         listingId: testListing.id,
-        amountCents: order.amountCents,
+        subtotalCents: order.subtotalCents,
         isTestPayment: true,
       },
     });
@@ -125,13 +127,30 @@ export async function POST(request: Request) {
             product_data: {
               name: testListing.displayTitle,
               description: 'Test listing purchase for webhook verification',
+              // Tax code for general merchandise (Pokemon cards)
+              tax_code: 'txcd_99999999',
             },
-            unit_amount: order.amountCents,
+            unit_amount: order.subtotalCents,
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
+      // PM-56: Enable automatic tax calculation
+      // NOTE: Requires tax registration in Stripe Dashboard (Settings > Tax > Add registration)
+      // Disabled for now - enable once tax registration is configured
+      // automatic_tax: {
+      //   enabled: true,
+      // },
+      // PM-56: Collect shipping address during checkout
+      shipping_address_collection: {
+        allowed_countries: ['US'],
+      },
+      // PM-56: Save addresses to Stripe Customer for future orders
+      customer_update: {
+        shipping: 'auto',
+        address: 'auto',
+      },
       payment_intent_data: {
         description: `Test Listing Purchase - ${testListing.displayTitle}`,
         metadata: {

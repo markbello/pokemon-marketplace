@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAuditEvent } from '@/lib/audit';
+import { getSessionTaxInfo } from '@/lib/stripe-addresses';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -32,12 +33,19 @@ async function processListingPurchase(params: {
   orderId: string;
   stripePaymentIntentId: string | null;
   stripeSessionId: string;
+  stripeCustomerId: string | null;
+  taxInfo: {
+    subtotalCents: number;
+    taxCents: number;
+    shippingCents: number;
+    totalCents: number;
+  } | null;
   eventId: string;
   eventType: string;
   ipAddress?: string;
   userAgent?: string;
 }): Promise<{ order: Awaited<ReturnType<typeof prisma.order.findUnique>>; listingUpdated: boolean }> {
-  const { orderId, stripePaymentIntentId, stripeSessionId, eventId, eventType, ipAddress, userAgent } = params;
+  const { orderId, stripePaymentIntentId, stripeSessionId, stripeCustomerId, taxInfo, eventId, eventType, ipAddress, userAgent } = params;
 
   const result = await prisma.$transaction(async (tx) => {
     // Fetch order with its associated listing
@@ -61,6 +69,13 @@ async function processListingPurchase(params: {
           data: {
             status: 'PAID',
             stripePaymentIntentId,
+            // PM-56: Store Stripe customer ID for address lookups
+            stripeCustomerId: stripeCustomerId || undefined,
+            // PM-56: Store tax/shipping breakdown from Stripe
+            subtotalCents: taxInfo?.subtotalCents,
+            taxCents: taxInfo?.taxCents,
+            shippingCents: taxInfo?.shippingCents,
+            totalCents: taxInfo?.totalCents,
             updatedAt: new Date(),
           },
           include: { listing: true },
@@ -208,11 +223,23 @@ export async function POST(request: Request) {
         }
       }
 
+      // PM-56: Get tax/shipping breakdown from Stripe
+      const taxInfo = await getSessionTaxInfo(session.id);
+      console.log('[Webhook] Tax info:', taxInfo);
+
+      // PM-56: Get customer ID for address lookups
+      const stripeCustomerId = typeof session.customer === 'string' 
+        ? session.customer 
+        : session.customer?.id || null;
+      console.log('[Webhook] Stripe Customer ID:', stripeCustomerId);
+
       // Process the purchase (order + listing update) atomically
       const { order, listingUpdated } = await processListingPurchase({
         orderId: resolvedOrderId,
         stripePaymentIntentId: session.payment_intent as string | null,
         stripeSessionId: session.id,
+        stripeCustomerId,
+        taxInfo,
         eventId: event.id,
         eventType: event.type,
         ipAddress,
@@ -292,11 +319,29 @@ export async function POST(request: Request) {
         });
 
         if (existingOrder && existingOrder.status === 'PENDING') {
+          // PM-56: Try to get tax info from session if available
+          let taxInfo = null;
+          let stripeCustomerId = null;
+          
+          if (existingOrder.stripeSessionId) {
+            taxInfo = await getSessionTaxInfo(existingOrder.stripeSessionId);
+            try {
+              const session = await stripe.checkout.sessions.retrieve(existingOrder.stripeSessionId);
+              stripeCustomerId = typeof session.customer === 'string' 
+                ? session.customer 
+                : session.customer?.id || null;
+            } catch {
+              // Ignore if session retrieval fails
+            }
+          }
+
           // Use the same processing function for consistency
           const { order, listingUpdated } = await processListingPurchase({
             orderId,
             stripePaymentIntentId: paymentIntent.id,
             stripeSessionId: existingOrder.stripeSessionId || '',
+            stripeCustomerId,
+            taxInfo,
             eventId: event.id,
             eventType: event.type,
             ipAddress,

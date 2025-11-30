@@ -58,13 +58,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const buyer = await getOrCreateUser(buyerId);
 
     // Create Order as a pending listing-based purchase
+    // subtotalCents = item price, totalCents = same initially (webhook updates with tax/shipping)
     const order = await prisma.order.create({
       data: {
         buyerId,
         sellerId: listing.sellerId,
         sellerName: listing.seller.displayName || null,
         description: `Listing purchase - ${listing.displayTitle}`,
-        amountCents: listing.askingPriceCents,
+        subtotalCents: listing.askingPriceCents,
+        totalCents: listing.askingPriceCents, // Updated by webhook with actual amount
         currency: listing.currency,
         status: 'PENDING',
         isTestPayment: true, // still in test mode for PM-33
@@ -86,7 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       changes: {
         orderId: order.id,
         listingId: listing.id,
-        amountCents: order.amountCents,
+        subtotalCents: order.subtotalCents,
       },
     });
 
@@ -114,6 +116,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             currency: listing.currency.toLowerCase(),
             product_data: {
               name: listing.displayTitle,
+              // Tax code for general merchandise (Pokemon cards)
+              tax_code: 'txcd_99999999',
             },
             unit_amount: listing.askingPriceCents,
           },
@@ -121,6 +125,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       ],
       mode: 'payment',
+      // PM-56: Enable automatic tax calculation
+      // NOTE: Requires tax registration in Stripe Dashboard (Settings > Tax > Add registration)
+      // Disabled for now - enable once tax registration is configured
+      // automatic_tax: {
+      //   enabled: true,
+      // },
+      // PM-56: Collect shipping address during checkout
+      shipping_address_collection: {
+        allowed_countries: ['US'],
+      },
+      // PM-56: Save addresses to Stripe Customer for future orders
+      customer_update: {
+        shipping: 'auto',
+        address: 'auto',
+      },
       payment_intent_data: {
         description: `Listing purchase - ${listing.displayTitle}`,
         metadata: {

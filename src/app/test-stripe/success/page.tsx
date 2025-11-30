@@ -41,7 +41,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         status: true,
         listingId: true,
         snapshotListingDisplayTitle: true,
-        amountCents: true,
+        totalCents: true,
         currency: true,
       },
     });
@@ -127,20 +127,27 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             Check your terminal for webhook logs: <code>[Webhook] Listing marked as SOLD</code>
           </p>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className={!webhookProcessed ? 'animate-pulse' : ''}
-            >
-              <Link
-                href={`/test-stripe/success?orderId=${params.orderId}&listingId=${params.listingId}`}
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:flex-wrap">
+            {!webhookProcessed && (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="animate-pulse"
               >
-                {webhookProcessed ? 'Refresh Status' : 'Check Webhook Status'}
-              </Link>
-            </Button>
-            <Button asChild size="lg">
+                <Link
+                  href={`/test-stripe/success?orderId=${params.orderId}&listingId=${params.listingId}`}
+                >
+                  Check Webhook Status
+                </Link>
+              </Button>
+            )}
+            {webhookProcessed && order && (
+              <Button asChild size="lg">
+                <Link href={`/orders/${order.id}`}>View Order Details</Link>
+              </Button>
+            )}
+            <Button asChild variant={webhookProcessed ? 'outline' : 'default'} size="lg">
               <Link href="/account/purchases">View Your Purchases</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
