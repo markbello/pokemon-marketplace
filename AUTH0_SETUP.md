@@ -70,7 +70,7 @@ export const auth0 = new Auth0Client({
 2. **Create Application** (if not already created):
    - Click "Applications" → "Create Application"
    - Choose "Regular Web Application"
-   - Name: "Pokemon Marketplace" (or your preferred name)
+   - Name: "kado.io" (or your preferred name)
 
 3. **Configure Application Settings**:
    - **Allowed Callback URLs**: `http://localhost:3000/api/auth/callback`

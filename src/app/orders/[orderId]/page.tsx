@@ -141,18 +141,12 @@ export default async function OrderDetailPage({
               <div className="flex items-start gap-4">
                 {/* Product Image */}
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  {order.snapshotListingImageUrl ? (
-                    <Image
-                      src={order.snapshotListingImageUrl}
-                      alt={order.snapshotListingDisplayTitle || 'Product'}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <Package className="h-8 w-8" />
-                    </div>
-                  )}
+                  <Image
+                    src={order.snapshotListingImageUrl || '/kado-placeholder.jpg'}
+                    alt={order.snapshotListingDisplayTitle || 'Product'}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
 
                 {/* Product Details */}

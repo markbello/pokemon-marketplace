@@ -44,9 +44,9 @@ export function UserAvatar({
   };
 
   const sizeClasses = {
-    small: 'h-10 w-10 text-xs',
-    medium: 'h-16 w-16 text-sm',
-    large: 'h-24 w-24 text-base',
+    small: 'h-12 w-12 text-sm',
+    medium: 'h-20 w-20 text-base',
+    large: 'h-28 w-28 text-lg',
   };
 
   return (

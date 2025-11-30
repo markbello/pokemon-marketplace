@@ -116,7 +116,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             currency: listing.currency.toLowerCase(),
             product_data: {
               name: listing.displayTitle,
-              // Tax code for general merchandise (Pokemon cards)
+              // Tax code for general merchandise (trading cards)
               tax_code: 'txcd_99999999',
             },
             unit_amount: listing.askingPriceCents,

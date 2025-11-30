@@ -32,9 +32,9 @@ export default async function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-6 text-4xl font-bold">Welcome to Pokemon Marketplace</h1>
+        <h1 className="mb-6 text-4xl font-bold text-kado-blue">Welcome to kado.io</h1>
         <p className="text-muted-foreground mb-8 text-lg">
-          Buy and sell Pokemon cards with ease. Browse our marketplace or start selling today!
+          Buy and sell trading cards with ease. Browse our marketplace or start selling today!
         </p>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -57,7 +57,7 @@ export default async function Home() {
                 <Store className="h-5 w-5" />
                 <CardTitle>Start Selling</CardTitle>
               </div>
-              <CardDescription>List your Pokemon cards and reach buyers worldwide.</CardDescription>
+              <CardDescription>List your cards and reach buyers worldwide.</CardDescription>
             </CardHeader>
             <CardContent>
               {isAuthenticated ? (
@@ -96,10 +96,16 @@ export default async function Home() {
               start selling from your seller dashboard.
             </p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {listings.map((listing) => (
-                <Card key={listing.id}>
-                  <CardHeader className="space-y-1">
+                <Card key={listing.id} className="overflow-hidden rounded-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={listing.imageUrl || '/kado-placeholder.jpg'}
+                    alt={listing.displayTitle}
+                    className="aspect-[4/3] w-full object-contain bg-muted/30"
+                  />
+                  <CardHeader className="space-y-1 pb-2">
                     <CardTitle className="line-clamp-2 text-base">{listing.displayTitle}</CardTitle>
                     <CardDescription>
                       {listing.seller?.displayName
@@ -107,8 +113,8 @@ export default async function Home() {
                         : 'Sold by seller'}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex items-center justify-between gap-3">
-                    <div className="text-lg font-semibold">
+                  <CardContent className="flex items-center justify-between gap-3 pt-0">
+                    <div className="text-lg font-semibold text-kado-blue">
                       {(listing.askingPriceCents / 100).toLocaleString('en-US', {
                         style: 'currency',
                         currency: listing.currency || 'USD',

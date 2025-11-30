@@ -388,7 +388,7 @@ function SellerDashboardContent() {
         <div className="space-y-6">
           <div className="mb-6">
             <h1 className="mb-2 text-3xl font-bold">Seller Dashboard</h1>
-            <p className="text-muted-foreground">Start selling on Pokemon Marketplace</p>
+            <p className="text-muted-foreground">Start selling on kado.io</p>
           </div>
 
           <Card>
@@ -398,7 +398,7 @@ function SellerDashboardContent() {
                 <div>
                   <CardTitle>Become a Seller</CardTitle>
                   <CardDescription>
-                    Complete seller onboarding to start listing and selling Pokemon cards
+                    Complete seller onboarding to start listing and selling cards
                   </CardDescription>
                 </div>
               </div>

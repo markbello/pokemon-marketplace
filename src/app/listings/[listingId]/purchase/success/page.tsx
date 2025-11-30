@@ -60,18 +60,16 @@ export default async function ListingPurchaseSuccessPage({
         </p>
       </div>
 
-      <div className="bg-card text-card-foreground overflow-hidden rounded-lg border shadow-sm">
+      <div className="bg-card text-card-foreground overflow-hidden rounded-xl border shadow-sm">
         <div className="flex flex-col gap-4 p-4 sm:flex-row">
-          {imageUrl && (
-            <div className="sm:w-40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl}
-                alt={displayTitle}
-                className="h-40 w-full rounded-md object-cover"
-              />
-            </div>
-          )}
+          <div className="sm:w-40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl || '/kado-placeholder.jpg'}
+              alt={displayTitle}
+              className="h-40 w-full rounded-md object-cover"
+            />
+          </div>
           <div className="flex-1 space-y-2">
             <h2 className="text-xl font-semibold">{displayTitle}</h2>
             <div className="text-muted-foreground text-sm">

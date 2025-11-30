@@ -14,7 +14,7 @@ export function WelcomeStep({ onComplete, userName }: WelcomeStepProps) {
     {
       icon: ShoppingBag,
       title: 'Browse & Buy',
-      description: 'Discover rare Pokemon cards from verified sellers worldwide',
+      description: 'Discover rare trading cards from verified sellers worldwide',
     },
     {
       icon: TrendingUp,

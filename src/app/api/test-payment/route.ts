@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     const testListing = await prisma.listing.create({
       data: {
         sellerId: userId,
-        displayTitle: `Test Pokemon Card - ${new Date().toISOString().slice(0, 16)}`,
+        displayTitle: `Test Card - ${new Date().toISOString().slice(0, 16)}`,
         sellerNotes: 'This is a test listing created for webhook testing (PM-39)',
         askingPriceCents: 100, // $1.00
         currency: 'USD',
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
             product_data: {
               name: testListing.displayTitle,
               description: 'Test listing purchase for webhook verification',
-              // Tax code for general merchandise (Pokemon cards)
+              // Tax code for general merchandise (trading cards)
               tax_code: 'txcd_99999999',
             },
             unit_amount: order.subtotalCents,
