@@ -4,7 +4,7 @@ import { ManagementClient } from 'auth0';
 /**
  * Get Auth0 Management API client
  */
-function getManagementClient(): ManagementClient {
+export function getManagementClient(): ManagementClient {
   const domain = process.env.AUTH0_DOMAIN;
   const clientId = process.env.AUTH0_MANAGEMENT_CLIENT_ID || process.env.AUTH0_CLIENT_ID;
   const clientSecret =
@@ -19,6 +19,37 @@ function getManagementClient(): ManagementClient {
     clientId,
     clientSecret,
   });
+}
+
+export async function updateUserEmail(auth0UserId: string, email: string) {
+  const management = getManagementClient();
+  return management.users.update({ id: auth0UserId }, { email, email_verified: false });
+}
+
+export async function updateUserPreferredEmail(auth0UserId: string, email: string) {
+  const management = getManagementClient();
+  return management.users.update(
+    { id: auth0UserId },
+    {
+      user_metadata: {
+        preferredEmail: email,
+      },
+    },
+  );
+}
+
+type UserLike = {
+  email?: string | null;
+  user_metadata?: {
+    preferredEmail?: string | null;
+  };
+};
+
+export function getPreferredEmail(
+  user: UserLike | null | undefined,
+  sessionEmail?: string,
+): string | undefined {
+  return sessionEmail || user?.email || user?.user_metadata?.preferredEmail || undefined;
 }
 
 /**

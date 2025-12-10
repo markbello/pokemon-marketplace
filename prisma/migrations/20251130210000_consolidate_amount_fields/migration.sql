@@ -19,3 +19,6 @@ ALTER TABLE "Order" ALTER COLUMN "totalCents" SET NOT NULL;
 -- Step 3: Drop the legacy amountCents column
 ALTER TABLE "Order" DROP COLUMN "amountCents";
 
+
+
+

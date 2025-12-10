@@ -67,7 +67,7 @@ export default async function ListingPurchaseSuccessPage({
             <img
               src={imageUrl || '/kado-placeholder.jpg'}
               alt={displayTitle}
-              className="h-40 w-full rounded-md object-cover"
+              className="border-border bg-muted/40 h-40 w-full rounded-md border object-contain p-2"
             />
           </div>
           <div className="flex-1 space-y-2">

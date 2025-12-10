@@ -2,10 +2,11 @@ import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Store, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Store, ArrowRight, ShoppingBag, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
+import { TestEmailSender } from '@/components/home/TestEmailSender';
 
 export default async function Home() {
   const session = await auth0.getSession();
@@ -32,12 +33,12 @@ export default async function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-6 text-4xl font-bold text-kado-blue">Welcome to kado.io</h1>
+        <h1 className="text-kado-blue mb-6 text-4xl font-bold">Welcome to kado.io</h1>
         <p className="text-muted-foreground mb-8 text-lg">
           Buy and sell trading cards with ease. Browse our marketplace or start selling today!
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -77,6 +78,19 @@ export default async function Home() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                <CardTitle>Send Test Email</CardTitle>
+              </div>
+              <CardDescription>Dev-only helper to trigger the test email endpoint.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TestEmailSender />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mt-10 space-y-4">
@@ -103,7 +117,7 @@ export default async function Home() {
                   <img
                     src={listing.imageUrl || '/kado-placeholder.jpg'}
                     alt={listing.displayTitle}
-                    className="aspect-[4/3] w-full object-contain bg-muted/30"
+                    className="bg-muted/30 aspect-[4/3] w-full object-contain"
                   />
                   <CardHeader className="space-y-1 pb-2">
                     <CardTitle className="line-clamp-2 text-base">{listing.displayTitle}</CardTitle>
@@ -114,7 +128,7 @@ export default async function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex items-center justify-between gap-3 pt-0">
-                    <div className="text-lg font-semibold text-kado-blue">
+                    <div className="text-kado-blue text-lg font-semibold">
                       {(listing.askingPriceCents / 100).toLocaleString('en-US', {
                         style: 'currency',
                         currency: listing.currency || 'USD',

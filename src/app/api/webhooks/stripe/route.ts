@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAuditEvent } from '@/lib/audit';
 import { getSessionTaxInfo } from '@/lib/stripe-addresses';
+import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/lib/send-email';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -11,17 +12,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 /**
  * Stripe Webhook Handler for Listing-Based Purchases (PM-39)
- * 
+ *
  * This is the primary source of truth for payment-side state changes.
  * When a checkout.session.completed event is received:
  * 1. The Order status is updated to PAID
  * 2. The associated Listing (if any) is marked as SOLD
- * 
+ *
  * Idempotency: This handler safely handles duplicate webhook deliveries by:
  * - Checking order status before updating (skip if already PAID)
  * - Checking listing status before updating (skip if already SOLD)
  * - Using transactions to ensure atomicity
- * 
+ *
  * The redirect-based success page acts as a fallback with the same checks.
  */
 
@@ -44,8 +45,22 @@ async function processListingPurchase(params: {
   eventType: string;
   ipAddress?: string;
   userAgent?: string;
-}): Promise<{ order: Awaited<ReturnType<typeof prisma.order.findUnique>>; listingUpdated: boolean }> {
-  const { orderId, stripePaymentIntentId, stripeSessionId, stripeCustomerId, taxInfo, eventId, eventType, ipAddress, userAgent } = params;
+}): Promise<{
+  order: Awaited<ReturnType<typeof prisma.order.findUnique>>;
+  listingUpdated: boolean;
+  orderAlreadyPaid: boolean;
+}> {
+  const {
+    orderId,
+    stripePaymentIntentId,
+    stripeSessionId,
+    stripeCustomerId,
+    taxInfo,
+    eventId,
+    eventType,
+    ipAddress,
+    userAgent,
+  } = params;
 
   const result = await prisma.$transaction(async (tx) => {
     // Fetch order with its associated listing
@@ -60,7 +75,7 @@ async function processListingPurchase(params: {
 
     // Idempotency check: if order is already PAID, skip update
     const orderAlreadyPaid = order.status === 'PAID';
-    
+
     // Update order to PAID if not already
     const updatedOrder = orderAlreadyPaid
       ? order
@@ -142,7 +157,11 @@ async function processListingPurchase(params: {
     });
   }
 
-  return { order: result.order, listingUpdated: result.listingUpdated };
+  return {
+    order: result.order,
+    listingUpdated: result.listingUpdated,
+    orderAlreadyPaid: result.orderAlreadyPaid,
+  };
 }
 
 export async function POST(request: Request) {
@@ -151,7 +170,7 @@ export async function POST(request: Request) {
   const signature = headersList.get('stripe-signature');
 
   console.log('[Webhook] Received webhook request');
-  
+
   if (!signature) {
     console.error('[Webhook] Missing stripe-signature header');
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
@@ -167,9 +186,11 @@ export async function POST(request: Request) {
     // Verify webhook signature
     // Note: In production, ensure STRIPE_WEBHOOK_SECRET is set
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
+
     if (!webhookSecret) {
-      console.warn('[Webhook] STRIPE_WEBHOOK_SECRET not set - skipping signature verification (DEVELOPMENT ONLY)');
+      console.warn(
+        '[Webhook] STRIPE_WEBHOOK_SECRET not set - skipping signature verification (DEVELOPMENT ONLY)',
+      );
       // Parse event without verification (for development/testing)
       event = JSON.parse(body) as Stripe.Event;
     } else {
@@ -181,7 +202,7 @@ export async function POST(request: Request) {
     console.error('[Webhook] Signature verification failed:', errorMessage);
     return NextResponse.json(
       { error: `Webhook signature verification failed: ${errorMessage}` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -192,11 +213,11 @@ export async function POST(request: Request) {
     // Handle checkout.session.completed event (primary handler for listing purchases)
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      
+
       console.log('[Webhook] Processing checkout.session.completed');
       console.log('[Webhook] Session ID:', session.id);
       console.log('[Webhook] Session metadata:', JSON.stringify(session.metadata));
-      
+
       // Extract metadata
       const orderId = session.metadata?.orderId;
       const listingId = session.metadata?.listingId;
@@ -206,14 +227,14 @@ export async function POST(request: Request) {
 
       // Try to find order by metadata or session ID
       let resolvedOrderId = orderId;
-      
+
       if (!resolvedOrderId) {
         console.warn('[Webhook] Order ID not in metadata, looking up by session ID:', session.id);
         const orderBySession = await prisma.order.findUnique({
           where: { stripeSessionId: session.id },
           select: { id: true },
         });
-        
+
         if (orderBySession) {
           resolvedOrderId = orderBySession.id;
           console.log('[Webhook] Found order by session ID:', resolvedOrderId);
@@ -228,13 +249,12 @@ export async function POST(request: Request) {
       console.log('[Webhook] Tax info:', taxInfo);
 
       // PM-56: Get customer ID for address lookups
-      const stripeCustomerId = typeof session.customer === 'string' 
-        ? session.customer 
-        : session.customer?.id || null;
+      const stripeCustomerId =
+        typeof session.customer === 'string' ? session.customer : session.customer?.id || null;
       console.log('[Webhook] Stripe Customer ID:', stripeCustomerId);
 
       // Process the purchase (order + listing update) atomically
-      const { order, listingUpdated } = await processListingPurchase({
+      const { order, listingUpdated, orderAlreadyPaid } = await processListingPurchase({
         orderId: resolvedOrderId,
         stripePaymentIntentId: session.payment_intent as string | null,
         stripeSessionId: session.id,
@@ -250,15 +270,50 @@ export async function POST(request: Request) {
       console.log('[Webhook] Order ID:', order?.id, 'Status:', order?.status);
       console.log('[Webhook] Listing updated:', listingUpdated);
 
+      // Send confirmation email only on first payment (idempotent)
+      if (!orderAlreadyPaid) {
+        try {
+          const emailResult = await sendOrderConfirmationEmail(resolvedOrderId, {
+            ipAddress,
+            userAgent,
+          });
+          if (!emailResult.success) {
+            console.error('[Webhook] Failed to send order confirmation email:', emailResult.error);
+          } else {
+            console.log('[Webhook] Order confirmation email sent, id:', emailResult.id);
+          }
+        } catch (err) {
+          console.error('[Webhook] Unexpected error sending confirmation email:', err);
+        }
+
+        try {
+          const sellerEmailResult = await sendSellerOrderNotificationEmail(resolvedOrderId, {
+            ipAddress,
+            userAgent,
+          });
+          if (!sellerEmailResult.success) {
+            console.error(
+              '[Webhook] Failed to send seller order notification:',
+              sellerEmailResult.error,
+            );
+          } else {
+            console.log('[Webhook] Seller order notification sent, id:', sellerEmailResult.id);
+          }
+        } catch (err) {
+          console.error('[Webhook] Unexpected error sending seller order notification:', err);
+        }
+      } else {
+        console.log('[Webhook] Skipping confirmation email (order already paid).');
+      }
     } else if (event.type === 'payment_intent.succeeded') {
       // Fallback: Handle payment_intent.succeeded if checkout.session.completed isn't received
       // This provides redundancy for listing-based purchases
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
+
       console.log('[Webhook] Processing payment_intent.succeeded (fallback)');
       console.log('[Webhook] Payment Intent ID:', paymentIntent.id);
       console.log('[Webhook] Payment Intent metadata:', JSON.stringify(paymentIntent.metadata));
-      
+
       let orderId: string | undefined = paymentIntent.metadata?.orderId;
 
       // If orderId not in payment intent metadata, try to retrieve the checkout session
@@ -280,7 +335,7 @@ export async function POST(request: Request) {
           where: { stripePaymentIntentId: paymentIntent.id },
           select: { id: true, stripeSessionId: true },
         });
-        
+
         if (orderByPaymentIntent) {
           orderId = orderByPaymentIntent.id;
           console.log('[Webhook] Found order by payment intent ID:', orderId);
@@ -297,7 +352,9 @@ export async function POST(request: Request) {
           for (const pendingOrder of pendingOrders) {
             if (pendingOrder.stripeSessionId) {
               try {
-                const session = await stripe.checkout.sessions.retrieve(pendingOrder.stripeSessionId);
+                const session = await stripe.checkout.sessions.retrieve(
+                  pendingOrder.stripeSessionId,
+                );
                 if (session.payment_intent === paymentIntent.id) {
                   orderId = pendingOrder.id;
                   console.log('[Webhook] Matched order by session payment intent:', orderId);
@@ -322,21 +379,24 @@ export async function POST(request: Request) {
           // PM-56: Try to get tax info from session if available
           let taxInfo = null;
           let stripeCustomerId = null;
-          
+
           if (existingOrder.stripeSessionId) {
             taxInfo = await getSessionTaxInfo(existingOrder.stripeSessionId);
             try {
-              const session = await stripe.checkout.sessions.retrieve(existingOrder.stripeSessionId);
-              stripeCustomerId = typeof session.customer === 'string' 
-                ? session.customer 
-                : session.customer?.id || null;
+              const session = await stripe.checkout.sessions.retrieve(
+                existingOrder.stripeSessionId,
+              );
+              stripeCustomerId =
+                typeof session.customer === 'string'
+                  ? session.customer
+                  : session.customer?.id || null;
             } catch {
               // Ignore if session retrieval fails
             }
           }
 
           // Use the same processing function for consistency
-          const { order, listingUpdated } = await processListingPurchase({
+          const { order, listingUpdated, orderAlreadyPaid } = await processListingPurchase({
             orderId,
             stripePaymentIntentId: paymentIntent.id,
             stripeSessionId: existingOrder.stripeSessionId || '',
@@ -351,8 +411,48 @@ export async function POST(request: Request) {
           console.log('[Webhook] Purchase processed from payment_intent event');
           console.log('[Webhook] Order ID:', order?.id, 'Status:', order?.status);
           console.log('[Webhook] Listing updated:', listingUpdated);
+
+          if (!orderAlreadyPaid) {
+            try {
+              const emailResult = await sendOrderConfirmationEmail(orderId, {
+                ipAddress,
+                userAgent,
+              });
+              if (!emailResult.success) {
+                console.error(
+                  '[Webhook] Failed to send order confirmation email:',
+                  emailResult.error,
+                );
+              } else {
+                console.log('[Webhook] Order confirmation email sent, id:', emailResult.id);
+              }
+            } catch (err) {
+              console.error('[Webhook] Unexpected error sending confirmation email:', err);
+            }
+            try {
+              const sellerEmailResult = await sendSellerOrderNotificationEmail(orderId, {
+                ipAddress,
+                userAgent,
+              });
+              if (!sellerEmailResult.success) {
+                console.error(
+                  '[Webhook] Failed to send seller order notification:',
+                  sellerEmailResult.error,
+                );
+              } else {
+                console.log('[Webhook] Seller order notification sent, id:', sellerEmailResult.id);
+              }
+            } catch (err) {
+              console.error('[Webhook] Unexpected error sending seller order notification:', err);
+            }
+          } else {
+            console.log('[Webhook] Skipping confirmation email (order already paid).');
+          }
         } else if (existingOrder) {
-          console.log('[Webhook] Order already processed (idempotent), status:', existingOrder.status);
+          console.log(
+            '[Webhook] Order already processed (idempotent), status:',
+            existingOrder.status,
+          );
         }
       } else {
         console.log('[Webhook] Payment intent succeeded but could not find associated order');
@@ -368,11 +468,6 @@ export async function POST(request: Request) {
     if (error instanceof Error) {
       console.error('[Webhook] Error stack:', error.stack);
     }
-    return NextResponse.json(
-      { error: 'Failed to process webhook' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process webhook' }, { status: 500 });
   }
 }
-
-

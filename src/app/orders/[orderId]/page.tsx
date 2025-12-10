@@ -15,25 +15,15 @@ import Image from 'next/image';
 function getStatusBadge(status: string) {
   switch (status) {
     case 'PAID':
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          ✓ Paid
-        </Badge>
-      );
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">✓ Paid</Badge>;
     case 'PENDING':
       return (
-        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-          ⏳ Pending
-        </Badge>
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⏳ Pending</Badge>
       );
     case 'CANCELLED':
-      return (
-        <Badge variant="secondary">○ Cancelled</Badge>
-      );
+      return <Badge variant="secondary">○ Cancelled</Badge>;
     case 'REFUNDED':
-      return (
-        <Badge variant="destructive">✗ Refunded</Badge>
-      );
+      return <Badge variant="destructive">✗ Refunded</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
@@ -84,11 +74,11 @@ export default async function OrderDetailPage({
   const total = order.totalCents;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       {/* Back link */}
       <Link
         href={isSeller ? '/account/seller' : '/account/purchases'}
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
+        className="text-muted-foreground hover:text-foreground mb-6 inline-flex items-center text-sm"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         {isSeller ? 'Back to Seller Dashboard' : 'Back to Purchases'}
@@ -96,29 +86,19 @@ export default async function OrderDetailPage({
 
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">
-              {isSeller ? 'Sale' : 'Purchase'}
-            </p>
-            <h1 className="text-3xl font-bold mb-2">
-              Order #{order.id.slice(-8).toUpperCase()}
-            </h1>
+            <p className="text-muted-foreground mb-1 text-sm">{isSeller ? 'Sale' : 'Purchase'}</p>
+            <h1 className="mb-2 text-3xl font-bold">Order #{order.id.slice(-8).toUpperCase()}</h1>
             <p className="text-muted-foreground">
               {isSeller ? 'Sold' : 'Placed'} on{' '}
-              <FormattedDate
-                date={order.createdAt}
-                purchaseTimezone={order.purchaseTimezone}
-              />
+              <FormattedDate date={order.createdAt} purchaseTimezone={order.purchaseTimezone} />
             </p>
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge(order.status)}
             {order.isTestPayment && (
-              <Badge
-                variant="outline"
-                className="border-blue-200 bg-blue-50 text-blue-800"
-              >
+              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-800">
                 Test
               </Badge>
             )}
@@ -126,9 +106,9 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Order Item(s) - Main content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           {/* Item Card */}
           <Card>
             <CardHeader>
@@ -140,40 +120,39 @@ export default async function OrderDetailPage({
             <CardContent>
               <div className="flex items-start gap-4">
                 {/* Product Image */}
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                <div className="shrink-0">
                   <Image
                     src={order.snapshotListingImageUrl || '/kado-placeholder.jpg'}
                     alt={order.snapshotListingDisplayTitle || 'Product'}
-                    fill
-                    className="object-cover"
+                    width={112}
+                    height={112}
+                    className="border-border bg-muted/40 rounded-lg border object-contain p-2"
                   />
                 </div>
 
                 {/* Product Details */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg truncate">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-semibold">
                     {order.snapshotListingDisplayTitle || order.description}
                   </h3>
                   {isSeller ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Buyer: {order.buyer?.displayName || 'Unknown'}
                     </p>
                   ) : (
                     order.sellerName && (
-                      <p className="text-sm text-muted-foreground">
-                        Sold by: {order.sellerName}
-                      </p>
+                      <p className="text-muted-foreground text-sm">Sold by: {order.sellerName}</p>
                     )
                   )}
-                  <p className="text-sm text-muted-foreground mt-1">Qty: 1</p>
+                  <p className="text-muted-foreground mt-1 text-sm">Qty: 1</p>
                 </div>
 
                 {/* Price */}
                 <div className="text-right">
-                  <p className="font-semibold text-lg">
+                  <p className="text-lg font-semibold">
                     {formatCurrency(
                       order.snapshotListingPriceCents ?? order.subtotalCents,
-                      order.currency
+                      order.currency,
                     )}
                   </p>
                 </div>
@@ -183,18 +162,18 @@ export default async function OrderDetailPage({
 
           {/* Addresses Section */}
           {(addresses?.shipping || addresses?.billing) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Shipping Address */}
               {addresses?.shipping && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
                       <Truck className="h-4 w-4" />
                       Shipping Address
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-sm space-y-1">
+                    <div className="space-y-1 text-sm">
                       {addresses.customerName && (
                         <p className="font-medium">{addresses.customerName}</p>
                       )}
@@ -212,13 +191,13 @@ export default async function OrderDetailPage({
               {addresses?.billing && !isSeller && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
                       <MapPin className="h-4 w-4" />
                       Billing Address
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-sm space-y-1">
+                    <div className="space-y-1 text-sm">
                       {addresses.customerName && (
                         <p className="font-medium">{addresses.customerName}</p>
                       )}
@@ -240,9 +219,10 @@ export default async function OrderDetailPage({
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Action Required: Ship this item</AlertTitle>
               <AlertDescription>
-                This order has been paid. Please ship the item to the buyer at the address shown above.
+                This order has been paid. Please ship the item to the buyer at the address shown
+                above.
                 {!addresses?.shipping && (
-                  <span className="block mt-2 text-amber-600">
+                  <span className="mt-2 block text-amber-600">
                     Note: Shipping address not available. Contact buyer for shipping details.
                   </span>
                 )}
@@ -285,9 +265,7 @@ export default async function OrderDetailPage({
 
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span className="text-lg">
-                  {formatCurrency(total, order.currency)}
-                </span>
+                <span className="text-lg">{formatCurrency(total, order.currency)}</span>
               </div>
             </CardContent>
           </Card>
@@ -309,9 +287,7 @@ export default async function OrderDetailPage({
               {addresses?.customerEmail && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Receipt sent to</span>
-                  <span className="truncate max-w-[180px]">
-                    {addresses.customerEmail}
-                  </span>
+                  <span className="max-w-[180px] truncate">{addresses.customerEmail}</span>
                 </div>
               )}
             </CardContent>
@@ -320,7 +296,7 @@ export default async function OrderDetailPage({
           {/* Order ID for reference */}
           <Card>
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Order ID</p>
+              <p className="text-muted-foreground text-xs">Order ID</p>
               <p className="font-mono text-sm break-all">{order.id}</p>
             </CardContent>
           </Card>
@@ -329,4 +305,3 @@ export default async function OrderDetailPage({
     </div>
   );
 }
-
