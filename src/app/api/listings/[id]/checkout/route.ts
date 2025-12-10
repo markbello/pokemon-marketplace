@@ -5,7 +5,7 @@ import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { getBaseUrl } from '@/lib/utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
-import { getOrCreateUser } from '@/lib/user';
+import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -21,18 +21,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const buyerId = session.user.sub;
-    const buyerEmail = session.user.email;
-
-    if (!buyerEmail) {
-      return NextResponse.json({ error: 'User email not found' }, { status: 400 });
-    }
-
     const headersList = await headers();
     const ipAddress =
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;
 
     const body = await request.json().catch(() => ({}));
+    const providedEmail =
+      typeof body.emailOverride === 'string' ? body.emailOverride.trim() : undefined;
+
     const purchaseTimezone = body.timezone || undefined;
 
     const { id: listingId } = await params;
@@ -56,6 +53,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // Ensure we have a user record for the buyer in our DB
     const buyer = await getOrCreateUser(buyerId);
+    const buyerEmail = getPreferredEmail(buyer, session.user.email || providedEmail);
+
+    if (!buyerEmail) {
+      return NextResponse.json(
+        { error: 'User email required', code: 'EMAIL_REQUIRED' },
+        { status: 428 },
+      );
+    }
 
     // Create Order as a pending listing-based purchase
     // subtotalCents = item price, totalCents = same initially (webhook updates with tax/shipping)

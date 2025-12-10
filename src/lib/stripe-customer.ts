@@ -14,7 +14,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function getOrCreateStripeCustomer(
   userId: string,
   email: string,
-  name?: string | null
+  name?: string | null,
 ): Promise<string> {
   // 1. Check if user already has a Stripe Customer ID
   const user = await prisma.user.findUnique({
@@ -25,7 +25,25 @@ export async function getOrCreateStripeCustomer(
   if (user?.stripeCustomerId) {
     // Verify the customer still exists in Stripe
     try {
-      await stripe.customers.retrieve(user.stripeCustomerId);
+      const customer = await stripe.customers.retrieve(user.stripeCustomerId);
+      if (customer.deleted) {
+        throw new Error('Stripe customer deleted');
+      }
+
+      // If email is missing or differs, update it so receipts/communications work
+      const desiredEmail = email || undefined;
+      const desiredName = name || undefined;
+      const needsUpdate =
+        (desiredEmail && customer.email !== desiredEmail) ||
+        (desiredName && customer.name !== desiredName);
+
+      if (needsUpdate) {
+        await stripe.customers.update(user.stripeCustomerId, {
+          email: desiredEmail,
+          name: desiredName,
+        });
+      }
+
       return user.stripeCustomerId;
     } catch {
       // Customer doesn't exist in Stripe, create a new one
@@ -47,4 +65,3 @@ export async function getOrCreateStripeCustomer(
 
   return customer.id;
 }
-
