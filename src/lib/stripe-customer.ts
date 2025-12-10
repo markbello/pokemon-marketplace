@@ -26,6 +26,9 @@ export async function getOrCreateStripeCustomer(
     // Verify the customer still exists in Stripe
     try {
       const customer = await stripe.customers.retrieve(user.stripeCustomerId);
+      if (customer.deleted) {
+        throw new Error('Stripe customer deleted');
+      }
 
       // If email is missing or differs, update it so receipts/communications work
       const desiredEmail = email || undefined;

@@ -48,7 +48,7 @@ export async function getOrderAddresses(orderId: string): Promise<OrderAddresses
     return null;
   }
 
-  let addresses: OrderAddresses = {
+  const addresses: OrderAddresses = {
     shipping: null,
     billing: null,
     customerName: null,

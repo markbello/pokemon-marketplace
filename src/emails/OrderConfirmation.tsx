@@ -185,8 +185,8 @@ export default function OrderConfirmationEmail(props: OrderConfirmationProps) {
 
           <Text style={styles.heading}>Thanks for your order, {firstName}!</Text>
           <Text style={styles.muted}>
-            We're getting your cards ready. Below are the details of your purchase. You can view
-            your order anytime from the button below.
+            We&apos;re getting your cards ready. Below are the details of your purchase. You can
+            view your order anytime from the button below.
           </Text>
 
           <Section style={styles.card}>
