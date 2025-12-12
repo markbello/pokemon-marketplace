@@ -1,20 +1,28 @@
 import { PrismaClient } from '@prisma/client';
-import { getDatabaseUrl } from '@/lib/env';
+import { detectRuntimeEnvironment, getDatabaseUrl } from '@/lib/env';
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prismaByEnv: Record<'prod' | 'staging', PrismaClient | undefined> | undefined;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    datasources: {
-      db: {
-        url: getDatabaseUrl(),
+const prismaByEnv = globalForPrisma.prismaByEnv ?? { prod: undefined, staging: undefined };
+
+export function getPrisma(hostnameOverride?: string): PrismaClient {
+  const { env } = detectRuntimeEnvironment(hostnameOverride);
+
+  if (!prismaByEnv[env]) {
+    prismaByEnv[env] = new PrismaClient({
+      datasources: {
+        db: {
+          url: getDatabaseUrl(hostnameOverride),
+        },
       },
-    },
-  });
+    });
+  }
+
+  return prismaByEnv[env]!;
+}
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaByEnv = prismaByEnv;
 }
