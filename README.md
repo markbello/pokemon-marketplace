@@ -56,38 +56,33 @@ vercel link
 vercel env pull
 ```
 
-Your `.env.local` should contain staging/test values (used for local + preview/staging). For the database, point `DATABASE_URL_STAGING` to your local Postgres to avoid Prisma shadow DB issues:
+Your `.env.local` should contain local development values. On Vercel, configure the **same env var names** differently for **Preview** (staging/test) vs **Production**.
 
 ```bash
 # Auth0 Configuration (get from team lead)
 AUTH0_SECRET="[get-from-team-lead]"
 AUTH0_BASE_URL="http://localhost:3000"
 AUTH0_ISSUER_BASE_URL="[get-from-team-lead]"
-AUTH0_CLIENT_ID_STAGING="[get-from-team-lead]"
-AUTH0_CLIENT_SECRET_STAGING="[get-from-team-lead]"
-AUTH0_DOMAIN_STAGING="[get-from-team-lead]"
-AUTH0_MANAGEMENT_CLIENT_ID_STAGING="[get-from-team-lead]"
-AUTH0_MANAGEMENT_CLIENT_SECRET_STAGING="[get-from-team-lead]"
+AUTH0_CLIENT_ID="[get-from-team-lead]"
+AUTH0_CLIENT_SECRET="[get-from-team-lead]"
+AUTH0_DOMAIN="[get-from-team-lead]"
+AUTH0_MANAGEMENT_CLIENT_ID="[get-from-team-lead]"
+AUTH0_MANAGEMENT_CLIENT_SECRET="[get-from-team-lead]"
 
-# Database - local dev (staging slot)
-DATABASE_URL_STAGING="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
+# Database - local dev (recommended to avoid Prisma shadow DB issues)
+DATABASE_URL="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
 
 # Stripe Configuration (get from team lead)
-STRIPE_SECRET_KEY_STAGING="sk_test_[get-from-team-lead]"
-STRIPE_WEBHOOK_SECRET_STAGING="whsec_[get-from-team-lead]"
+STRIPE_SECRET_KEY="sk_test_[get-from-team-lead]"
+STRIPE_WEBHOOK_SECRET="whsec_[get-from-team-lead]"
 
 # Cloudinary (for avatar uploads)
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="[get-from-team-lead]"
 ```
 
-Environment-aware variables (no base fallback):
-- `STRIPE_SECRET_KEY_STAGING`, `STRIPE_SECRET_KEY_PROD`, `STRIPE_WEBHOOK_SECRET_STAGING`, `STRIPE_WEBHOOK_SECRET_PROD`
-- `AUTH0_DOMAIN_STAGING`, `AUTH0_DOMAIN_PROD`, `AUTH0_MANAGEMENT_CLIENT_ID_STAGING`, `AUTH0_MANAGEMENT_CLIENT_SECRET_STAGING` (or `_PROD`)
-- `DATABASE_URL_STAGING`, `DATABASE_URL_PROD`
-
 **Notes**:
-- Keep `DATABASE_URL_STAGING` pointing to a local Postgres for development to avoid shadow DB conflicts.
-- Set `DATABASE_URL_STAGING` in Vercel’s Preview/Staging envs and `DATABASE_URL_PROD` in Production. Local dev reads the staging slot.
+- Keep `DATABASE_URL` pointing to a local Postgres for development to avoid Prisma shadow DB conflicts.
+- In Vercel, set these **same variable names** with **test/staging values** in **Preview** and **live values** in **Production**. This is what makes “Promote” safe.
 
 #### 3. Database Setup (local dev)
 
@@ -101,10 +96,10 @@ By default, this project assumes a PostgreSQL database specified by `DATABASE_UR
 docker compose up -d db
 ```
 
-2. Set `DATABASE_URL_STAGING` in `.env.local` to point at the local DB:
+2. Set `DATABASE_URL` in `.env.local` to point at the local DB:
 
 ```bash
-DATABASE_URL_STAGING="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
+DATABASE_URL="postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev?schema=public"
 ```
 
 3. Apply all existing migrations and generate the Prisma client:

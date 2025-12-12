@@ -59,7 +59,7 @@ export const auth0 = new Auth0Client({
 - `AUTH0_CLIENT_ID` - Application Client ID
 - `AUTH0_CLIENT_SECRET` - Application Client Secret  
 - `AUTH0_SECRET` - Auto-generated secure secret for session encryption
-- `APP_BASE_URL_STAGE` - Application base URL (http://localhost:3000)
+- `APP_BASE_URL` - Application base URL (http://localhost:3000)
 
 ## 📋 Remaining Setup Steps
 
@@ -90,7 +90,7 @@ AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_CLIENT_ID=your-client-id-here
 AUTH0_CLIENT_SECRET=your-client-secret-here
 AUTH0_SECRET=dd3009d9efd225272719ff61d8fe840a0a3fb442cf9ac0c3814c9d2467a388b9
-APP_BASE_URL_STAGE=http://localhost:3000
+APP_BASE_URL=http://localhost:3000
 ```
 
 ### 3. Test the Integration
