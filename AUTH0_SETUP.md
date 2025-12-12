@@ -59,7 +59,7 @@ export const auth0 = new Auth0Client({
 - `AUTH0_CLIENT_ID` - Application Client ID
 - `AUTH0_CLIENT_SECRET` - Application Client Secret  
 - `AUTH0_SECRET` - Auto-generated secure secret for session encryption
-- `APP_BASE_URL` - Application base URL (http://localhost:3000)
+- `VERCEL_URL` - Automatically set by Vercel (deployment host)
 
 ## 📋 Remaining Setup Steps
 
@@ -90,7 +90,7 @@ AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_CLIENT_ID=your-client-id-here
 AUTH0_CLIENT_SECRET=your-client-secret-here
 AUTH0_SECRET=dd3009d9efd225272719ff61d8fe840a0a3fb442cf9ac0c3814c9d2467a388b9
-APP_BASE_URL=http://localhost:3000
+# Local dev will use http://localhost:3000 automatically (no env var needed)
 ```
 
 ### 3. Test the Integration
@@ -130,7 +130,7 @@ APP_BASE_URL=http://localhost:3000
 ### Configuration Errors
 - Verify all environment variables are set in `.env.local`
 - Restart dev server after changing `.env.local`
-- Check that `APP_BASE_URL` matches your dev server URL
+- For local dev, verify your app is running on http://localhost:3000
 
 ### "Invalid state" Errors
 - Clear browser cookies and try again
