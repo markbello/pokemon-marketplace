@@ -1,5 +1,3 @@
-import { URL } from 'url';
-
 export type AppEnvironment = 'production' | 'staging' | 'preview' | 'local';
 
 const PROD_DOMAIN = 'kado.io';
