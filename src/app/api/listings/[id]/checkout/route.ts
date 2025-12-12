@@ -1,3 +1,4 @@
+import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth0 } from '@/lib/auth0';
@@ -169,6 +170,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json({ error: `Stripe error: ${error.message}` }, { status: 500 });
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(
