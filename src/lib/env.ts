@@ -1,5 +1,3 @@
-import { URL } from 'url';
-
 export type AppEnvironment = 'production' | 'staging' | 'preview' | 'local';
 
 const PROD_DOMAIN = 'kado.io';
@@ -43,13 +41,17 @@ export function detectAppEnvironment(): {
   isPreview: boolean;
   isLocal: boolean;
 } {
+  const explicitProd = optionalString(process.env.APP_BASE_URL_PROD);
+  const explicitStage = optionalString(process.env.APP_BASE_URL_STAGE);
   const explicitBase =
     optionalString(process.env.APP_BASE_URL) ?? optionalString(process.env.NEXT_PUBLIC_APP_URL);
   const vercelUrl = optionalString(process.env.VERCEL_URL);
 
   const hostname = (() => {
-    if (explicitBase) return new URL(explicitBase).hostname;
     if (vercelUrl) return new URL(`https://${vercelUrl}`).hostname;
+    if (explicitProd) return new URL(explicitProd).hostname;
+    if (explicitStage) return new URL(explicitStage).hostname;
+    if (explicitBase) return new URL(explicitBase).hostname;
     return undefined;
   })();
 
@@ -64,6 +66,15 @@ export function detectAppEnvironment(): {
   } else if (process.env.NODE_ENV === 'production') {
     // Fallback: production runtime but no custom domain; treat as preview
     env = 'preview';
+  }
+
+  // If detection came from explicit URLs (no Vercel host), honor prod/staging overrides
+  if (!vercelUrl) {
+    if (explicitProd && hostname === new URL(explicitProd).hostname) {
+      env = 'production';
+    } else if (explicitStage && hostname === new URL(explicitStage).hostname) {
+      env = 'staging';
+    }
   }
 
   return {
