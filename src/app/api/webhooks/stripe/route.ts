@@ -6,6 +6,7 @@ import { getSessionTaxInfo } from '@/lib/stripe-addresses';
 import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/lib/send-email';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe-client';
+import { getStripeWebhookSecret } from '@/lib/env';
 
 /**
  * Stripe Webhook Handler for Listing-Based Purchases (PM-39)
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
 
   try {
     // Verify webhook signature
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = getStripeWebhookSecret();
 
     if (!webhookSecret) {
       console.warn(
