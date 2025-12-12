@@ -7,10 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+import { stripe } from '@/lib/stripe-client';
 
 /**
  * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)

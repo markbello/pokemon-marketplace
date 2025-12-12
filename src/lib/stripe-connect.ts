@@ -1,11 +1,7 @@
-import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { updateStripeAccountId } from './user';
 import { getBaseUrl } from './utils';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+import { stripe } from './stripe-client';
 
 /**
  * Stripe Connect Express account verification status
@@ -161,4 +157,3 @@ export async function getAllSellerAccounts() {
 
   return sellersWithStatus.filter((seller) => seller !== null);
 }
-

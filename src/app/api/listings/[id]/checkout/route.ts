@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth0 } from '@/lib/auth0';
@@ -7,10 +6,7 @@ import { getBaseUrl } from '@/lib/utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+import { stripe } from '@/lib/stripe-client';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

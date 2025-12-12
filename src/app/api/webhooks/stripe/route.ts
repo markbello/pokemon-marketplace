@@ -5,10 +5,8 @@ import { logAuditEvent } from '@/lib/audit';
 import { getSessionTaxInfo } from '@/lib/stripe-addresses';
 import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/lib/send-email';
 import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+import { stripe } from '@/lib/stripe-client';
+import { detectAppEnvironment, getStripeSecrets } from '@/lib/env';
 
 /**
  * Stripe Webhook Handler for Listing-Based Purchases (PM-39)
@@ -184,12 +182,13 @@ export async function POST(request: Request) {
 
   try {
     // Verify webhook signature
-    // Note: In production, ensure STRIPE_WEBHOOK_SECRET is set
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Note: In production/staging, ensure environment-specific STRIPE_WEBHOOK_SECRET is set
+    const appEnv = detectAppEnvironment();
+    const { webhookSecret } = getStripeSecrets(appEnv);
 
     if (!webhookSecret) {
       console.warn(
-        '[Webhook] STRIPE_WEBHOOK_SECRET not set - skipping signature verification (DEVELOPMENT ONLY)',
+        `[Webhook] STRIPE_WEBHOOK_SECRET not set for ${appEnv.env} - skipping signature verification (DEVELOPMENT ONLY)`,
       );
       // Parse event without verification (for development/testing)
       event = JSON.parse(body) as Stripe.Event;
