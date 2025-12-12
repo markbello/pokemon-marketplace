@@ -7,10 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+import { stripe } from '@/lib/stripe-client';
 
 /**
  * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)
@@ -186,6 +183,10 @@ export async function POST(request: Request) {
 
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json({ error: `Stripe error: ${error.message}` }, { status: 500 });
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 });
