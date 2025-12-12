@@ -1,5 +1,5 @@
 import { auth0 } from '@/lib/auth0';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Store, ArrowRight, ShoppingBag, Mail } from 'lucide-react';
@@ -10,6 +10,7 @@ import { TestEmailSender } from '@/components/home/TestEmailSender';
 import { detectRuntimeEnvironment } from '@/lib/env';
 
 export default async function Home() {
+  const prisma = getPrisma();
   const session = await auth0.getSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.sub;

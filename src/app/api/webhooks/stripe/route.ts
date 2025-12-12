@@ -1,11 +1,11 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import { logAuditEvent } from '@/lib/audit';
 import { getSessionTaxInfo } from '@/lib/stripe-addresses';
 import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/lib/send-email';
 import Stripe from 'stripe';
-import { stripe } from '@/lib/stripe-client';
+import { getStripe } from '@/lib/stripe-client';
 import { getStripeWebhookSecret } from '@/lib/env';
 
 /**
@@ -163,6 +163,8 @@ async function processListingPurchase(params: {
 }
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
+  const stripe = getStripe();
   const body = await request.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
