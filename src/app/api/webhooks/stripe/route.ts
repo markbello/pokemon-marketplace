@@ -7,6 +7,7 @@ import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe-client';
 import { getStripeWebhookSecret } from '@/lib/env';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 /**
  * Stripe Webhook Handler for Listing-Based Purchases (PM-39)
@@ -29,6 +30,7 @@ import { getStripeWebhookSecret } from '@/lib/env';
  * Idempotent: safe to call multiple times for the same order.
  */
 async function processListingPurchase(params: {
+  prisma: PrismaClient;
   orderId: string;
   stripePaymentIntentId: string | null;
   stripeSessionId: string;
@@ -44,11 +46,12 @@ async function processListingPurchase(params: {
   ipAddress?: string;
   userAgent?: string;
 }): Promise<{
-  order: Awaited<ReturnType<typeof prisma.order.findUnique>>;
+  order: Awaited<ReturnType<PrismaClient['order']['findUnique']>>;
   listingUpdated: boolean;
   orderAlreadyPaid: boolean;
 }> {
   const {
+    prisma,
     orderId,
     stripePaymentIntentId,
     stripeSessionId,
@@ -60,7 +63,7 @@ async function processListingPurchase(params: {
     userAgent,
   } = params;
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Fetch order with its associated listing
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -252,6 +255,7 @@ export async function POST(request: Request) {
 
       // Process the purchase (order + listing update) atomically
       const { order, listingUpdated, orderAlreadyPaid } = await processListingPurchase({
+        prisma,
         orderId: resolvedOrderId,
         stripePaymentIntentId: session.payment_intent as string | null,
         stripeSessionId: session.id,
@@ -394,6 +398,7 @@ export async function POST(request: Request) {
 
           // Use the same processing function for consistency
           const { order, listingUpdated, orderAlreadyPaid } = await processListingPurchase({
+            prisma,
             orderId,
             stripePaymentIntentId: paymentIntent.id,
             stripeSessionId: existingOrder.stripeSessionId || '',

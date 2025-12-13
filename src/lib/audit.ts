@@ -23,12 +23,11 @@ export async function logAuditEvent(event: {
   metadata?: object;
 }) {
   return prisma.auditLog.create({
-          data: {
-            ...event,
-            partitionKey: generatePartitionKey(),
-            changes: event.changes || undefined,
-            metadata: event.metadata || undefined,
-          },
+    data: {
+      ...event,
+      partitionKey: generatePartitionKey(),
+      changes: event.changes || undefined,
+      metadata: event.metadata || undefined,
+    },
   });
 }
-

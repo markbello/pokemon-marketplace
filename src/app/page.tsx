@@ -10,10 +10,10 @@ import { TestEmailSender } from '@/components/home/TestEmailSender';
 import { detectRuntimeEnvironment } from '@/lib/env';
 
 export default async function Home() {
+  const runtime = detectRuntimeEnvironment();
   const session = await auth0.getSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.sub;
-  const runtime = detectRuntimeEnvironment();
 
   const listings = await prisma.listing.findMany({
     where: {
@@ -35,17 +35,17 @@ export default async function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-4 flex items-center justify-end">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-kado-blue text-4xl font-bold">Welcome to kado.io</h1>
           <div
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              runtime.env === 'prod' ? 'bg-green-100 text-green-900' : 'bg-amber-100 text-amber-900'
+              runtime === 'prod' ? 'bg-green-100 text-green-900' : 'bg-amber-100 text-amber-900'
             }`}
-            title={`VERCEL_URL=${process.env.VERCEL_URL || 'local'}`}
+            title={`VERCEL_URL: ${process.env.VERCEL_URL || 'local'}`}
           >
-            {runtime.env === 'prod' ? 'PROD' : 'STAGING'}
+            {runtime === 'prod' ? 'PROD' : 'STAGING'}
           </div>
         </div>
-        <h1 className="text-kado-blue mb-6 text-4xl font-bold">Welcome to kado.io</h1>
         <p className="text-muted-foreground mb-8 text-lg">
           Buy and sell trading cards with ease. Browse our marketplace or start selling today!
         </p>

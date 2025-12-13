@@ -11,6 +11,7 @@ import { stripe } from '@/lib/stripe-client';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const headersList = await headers();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {
@@ -18,7 +19,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const buyerId = session.user.sub;
-    const headersList = await headers();
     const ipAddress =
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;

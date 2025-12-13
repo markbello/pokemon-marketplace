@@ -23,6 +23,8 @@ import { stripe } from '@/lib/stripe-client';
  */
 export async function POST(request: Request) {
   try {
+    const headersList = await headers();
+
     // 1. Check authentication
     const session = await auth0.getSession();
 
@@ -42,7 +44,6 @@ export async function POST(request: Request) {
     const purchaseTimezone = body.timezone || undefined;
 
     // Get IP address and user agent for audit logging
-    const headersList = await headers();
     const ipAddress =
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;
