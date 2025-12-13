@@ -1,5 +1,18 @@
 import { defineConfig } from 'prisma/config';
-import { getDatabaseUrlSync } from './src/lib/env';
+
+// For Prisma CLI commands, use environment-specific variables
+function getDatabaseUrl(): string {
+  const vercelUrl = process.env.VERCEL_URL;
+  const isProd = vercelUrl?.includes('kado.io') || vercelUrl === 'kado.io';
+  const envSuffix = isProd ? 'PROD' : 'STAGING';
+
+  const dbUrl = process.env[`DATABASE_URL_${envSuffix}`];
+  if (dbUrl) {
+    return dbUrl;
+  }
+
+  throw new Error(`Missing DATABASE_URL_${envSuffix}`);
+}
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -8,6 +21,6 @@ export default defineConfig({
   },
   engine: 'classic',
   datasource: {
-    url: getDatabaseUrlSync(),
+    url: getDatabaseUrl(),
   },
 });
