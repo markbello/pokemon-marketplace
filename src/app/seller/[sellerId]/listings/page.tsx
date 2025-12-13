@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
 
 interface SellerListingsPageProps {
@@ -20,6 +20,7 @@ export default async function SellerListingsPage({ params }: SellerListingsPageP
   }
 
   // If the viewer is the seller, send them to their dashboard instead
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
   if (session?.user?.sub === sellerId) {
     redirect('/account/seller');
@@ -40,7 +41,8 @@ export default async function SellerListingsPage({ params }: SellerListingsPageP
       <div className="mb-6">
         <h1 className="mb-2 text-3xl font-bold">{sellerDisplayName}&apos;s listings</h1>
         <p className="text-muted-foreground">
-          Browse items this seller has listed for sale. Each listing represents a single physical item.
+          Browse items this seller has listed for sale. Each listing represents a single physical
+          item.
         </p>
       </div>
 
@@ -51,7 +53,7 @@ export default async function SellerListingsPage({ params }: SellerListingsPageP
           {listings.map((listing) => (
             <div
               key={listing.id}
-              className="border bg-card text-card-foreground flex flex-col overflow-hidden rounded-xl shadow-sm"
+              className="bg-card text-card-foreground flex flex-col overflow-hidden rounded-xl border shadow-sm"
             >
               <div className="bg-muted/30">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -85,5 +87,3 @@ export default async function SellerListingsPage({ params }: SellerListingsPageP
     </div>
   );
 }
-
-

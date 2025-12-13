@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagementClient } from '@/lib/auth0-management';
 
@@ -9,6 +9,7 @@ import { getManagementClient } from '@/lib/auth0-management';
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {

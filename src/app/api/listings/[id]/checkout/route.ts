@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { getBaseUrl } from '@/lib/server-utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
@@ -13,6 +13,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const stripe = await getStripeClient();
     const headersList = await headers();
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {

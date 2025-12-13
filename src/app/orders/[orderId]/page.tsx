@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getOrderAddresses, formatAddress } from '@/lib/stripe-addresses';
@@ -34,6 +34,7 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ orderId: string }>;
 }) {
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
 
   if (!session?.user?.sub) {

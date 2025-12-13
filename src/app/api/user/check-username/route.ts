@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagementClient } from '@/lib/auth0-management';
 
@@ -7,6 +7,7 @@ import { getManagementClient } from '@/lib/auth0-management';
  * GET /api/user/check-username?username=example
  */
 export async function GET(request: NextRequest) {
+  const auth0 = await getAuth0Client();
   const searchParams = request.nextUrl.searchParams;
   const username = searchParams.get('username');
 

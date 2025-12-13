@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ interface SuccessPageProps {
  * - Webhook pending: Order=PENDING, Listing=PUBLISHED (refresh to check again)
  */
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
 
   if (!session?.user?.sub) {

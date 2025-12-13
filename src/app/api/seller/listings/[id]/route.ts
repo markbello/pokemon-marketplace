@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {

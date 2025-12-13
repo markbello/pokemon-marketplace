@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { detectRuntimeEnvironment } from '@/lib/env';
 
 export default async function Home() {
   const runtime = await detectRuntimeEnvironment();
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.sub;
