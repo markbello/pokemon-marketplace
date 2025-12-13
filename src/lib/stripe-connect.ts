@@ -70,7 +70,7 @@ export async function createStripeConnectAccount(
 
   if (user?.stripeAccountId) {
     // Account already exists, create onboarding link for existing account
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const accountLink = await stripe.accountLinks.create({
       account: user.stripeAccountId,
       refresh_url: `${baseUrl}/account/seller?refresh=true`,
@@ -101,7 +101,7 @@ export async function createStripeConnectAccount(
   await updateStripeAccountId(userId, account.id);
 
   // Create onboarding link
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
   const accountLink = await stripe.accountLinks.create({
     account: account.id,
     refresh_url: `${baseUrl}/account/seller?refresh=true`,

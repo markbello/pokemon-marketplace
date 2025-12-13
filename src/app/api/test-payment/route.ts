@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       user.displayName || session.user.name || undefined,
     );
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
 
     // 7. Create Stripe checkout session with listing metadata (matches listing checkout flow)
     const checkoutSession = await stripe.checkout.sessions.create({

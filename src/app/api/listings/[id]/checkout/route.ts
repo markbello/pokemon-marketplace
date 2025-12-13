@@ -101,7 +101,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       buyer.displayName || session.user.name || undefined,
     );
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const sellerSegment = encodeURIComponent(listing.sellerId);
     const successUrl = `${baseUrl}/listings/${listing.id}/purchase/success?orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/seller/${sellerSegment}/listings`;
