@@ -1,4 +1,4 @@
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Generate partition key for audit logs (format: "YYYY-MM")
@@ -22,7 +22,6 @@ export async function logAuditEvent(event: {
   userAgent?: string;
   metadata?: object;
 }) {
-  const prisma = getPrisma();
   return prisma.auditLog.create({
     data: {
       ...event,

@@ -2,17 +2,16 @@ import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth0 } from '@/lib/auth0';
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getBaseUrl } from '@/lib/utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { getStripe } from '@/lib/stripe-client';
+import { stripe } from '@/lib/stripe-client';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const prisma = getPrisma();
-    const stripe = getStripe();
+    const headersList = await headers();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {
@@ -20,7 +19,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const buyerId = session.user.sub;
-    const headersList = await headers();
     const ipAddress =
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;

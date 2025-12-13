@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getBaseUrl } from '@/lib/utils';
 import { auth0 } from '@/lib/auth0';
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { getStripe } from '@/lib/stripe-client';
+import { stripe } from '@/lib/stripe-client';
 
 /**
  * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)
@@ -23,8 +23,8 @@ import { getStripe } from '@/lib/stripe-client';
  */
 export async function POST(request: Request) {
   try {
-    const prisma = getPrisma();
-    const stripe = getStripe();
+    const headersList = await headers();
+
     // 1. Check authentication
     const session = await auth0.getSession();
 
@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     const purchaseTimezone = body.timezone || undefined;
 
     // Get IP address and user agent for audit logging
-    const headersList = await headers();
     const ipAddress =
       headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
     const userAgent = headersList.get('user-agent') || undefined;

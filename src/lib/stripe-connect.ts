@@ -1,7 +1,7 @@
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { updateStripeAccountId } from './user';
 import { getBaseUrl } from './utils';
-import { getStripe } from './stripe-client';
+import { stripe } from './stripe-client';
 
 /**
  * Stripe Connect Express account verification status
@@ -19,7 +19,6 @@ export interface StripeAccountStatus {
  * Account is considered verified when both charges and payouts are enabled
  */
 export async function isStripeAccountVerified(accountId: string): Promise<boolean> {
-  const stripe = getStripe();
   try {
     const account = await stripe.accounts.retrieve(accountId);
     return account.charges_enabled === true && account.payouts_enabled === true;
@@ -35,7 +34,6 @@ export async function isStripeAccountVerified(accountId: string): Promise<boolea
 export async function getStripeAccountStatus(
   accountId: string,
 ): Promise<StripeAccountStatus | null> {
-  const stripe = getStripe();
   try {
     const account = await stripe.accounts.retrieve(accountId);
 
@@ -60,8 +58,6 @@ export async function createStripeConnectAccount(
   userId: string,
   email: string,
 ): Promise<{ accountId: string; onboardingUrl: string }> {
-  const prisma = getPrisma();
-  const stripe = getStripe();
   // Check if user already has a Stripe Connect account
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -119,7 +115,6 @@ export async function createStripeConnectAccount(
  * Create a login link for sellers to access their Stripe Express Dashboard
  */
 export async function createStripeDashboardLink(accountId: string): Promise<string> {
-  const stripe = getStripe();
   const loginLink = await stripe.accounts.createLoginLink(accountId);
   return loginLink.url;
 }
@@ -129,7 +124,6 @@ export async function createStripeDashboardLink(accountId: string): Promise<stri
  * Useful for admin interface
  */
 export async function getAllSellerAccounts() {
-  const prisma = getPrisma();
   const sellers = await prisma.user.findMany({
     where: {
       stripeAccountId: {

@@ -1,6 +1,6 @@
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { updateStripeCustomerId } from './user';
-import { getStripe } from './stripe-client';
+import { stripe } from './stripe-client';
 
 /**
  * Get or create Stripe Customer for a user
@@ -12,8 +12,6 @@ export async function getOrCreateStripeCustomer(
   email: string,
   name?: string | null,
 ): Promise<string> {
-  const prisma = getPrisma();
-  const stripe = getStripe();
   // 1. Check if user already has a Stripe Customer ID
   const user = await prisma.user.findUnique({
     where: { id: userId },
