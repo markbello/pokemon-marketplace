@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';

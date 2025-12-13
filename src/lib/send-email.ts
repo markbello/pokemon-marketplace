@@ -4,7 +4,7 @@ import OrderConfirmationEmail from '../emails/OrderConfirmation';
 import SellerOrderNotificationEmail from '../emails/SellerOrderNotification';
 import { logAuditEvent } from '@/lib/audit';
 import { getOrderDataForEmail } from '@/lib/email-helpers';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 

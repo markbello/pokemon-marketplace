@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { updateStripeAccountId } from './user';
-import { getBaseUrl } from './utils';
+import { getBaseUrl } from './server-utils';
 import { getStripeClient } from './stripe-client';
 
 /**
