@@ -8,7 +8,7 @@
 
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
-import { stripe } from './stripe-client';
+import { getStripeClient } from './stripe-client';
 
 export interface StripeAddress {
   line1: string | null;
@@ -32,6 +32,8 @@ export interface OrderAddresses {
  * Tries checkout session first (most accurate for specific order), then falls back to customer
  */
 export async function getOrderAddresses(orderId: string): Promise<OrderAddresses | null> {
+  const stripe = await getStripeClient();
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
@@ -163,6 +165,8 @@ export async function getCustomerForOrder(orderId: string): Promise<{
   email: string | null;
   phone: string | null;
 } | null> {
+  const stripe = await getStripeClient();
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: { stripeCustomerId: true },
@@ -218,6 +222,8 @@ export async function getSessionTaxInfo(sessionId: string): Promise<{
   shippingCents: number;
   totalCents: number;
 } | null> {
+  const stripe = await getStripeClient();
+
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['total_details.breakdown'],

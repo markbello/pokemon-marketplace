@@ -3,14 +3,15 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { stripe } from '@/lib/stripe-client';
+import { getStripeClient } from '@/lib/stripe-client';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const stripe = await getStripeClient();
     const headersList = await headers();
     const session = await auth0.getSession();
 
@@ -100,7 +101,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       buyer.displayName || session.user.name || undefined,
     );
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const sellerSegment = encodeURIComponent(listing.sellerId);
     const successUrl = `${baseUrl}/listings/${listing.id}/purchase/success?orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/seller/${sellerSegment}/listings`;

@@ -1,5 +1,5 @@
 import { Auth0Client } from '@auth0/nextjs-auth0/server';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrlSync } from '@/lib/server-utils';
 
 export const auth0 = new Auth0Client({
   routes: {
@@ -7,5 +7,5 @@ export const auth0 = new Auth0Client({
     logout: '/api/auth/logout',
     callback: '/api/auth/callback',
   },
-  appBaseUrl: getBaseUrl(),
+  appBaseUrl: getBaseUrlSync(),
 });

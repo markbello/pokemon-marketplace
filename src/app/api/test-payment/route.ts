@@ -1,13 +1,13 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { auth0 } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { stripe } from '@/lib/stripe-client';
+import { getStripeClient } from '@/lib/stripe-client';
 
 /**
  * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)
@@ -23,6 +23,7 @@ import { stripe } from '@/lib/stripe-client';
  */
 export async function POST(request: Request) {
   try {
+    const stripe = await getStripeClient();
     const headersList = await headers();
 
     // 1. Check authentication
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
       user.displayName || session.user.name || undefined,
     );
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
 
     // 7. Create Stripe checkout session with listing metadata (matches listing checkout flow)
     const checkoutSession = await stripe.checkout.sessions.create({

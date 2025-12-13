@@ -5,7 +5,7 @@ import { logAuditEvent } from '@/lib/audit';
 import { getSessionTaxInfo } from '@/lib/stripe-addresses';
 import { sendOrderConfirmationEmail, sendSellerOrderNotificationEmail } from '@/lib/send-email';
 import Stripe from 'stripe';
-import { stripe } from '@/lib/stripe-client';
+import { getStripeClient } from '@/lib/stripe-client';
 import { getStripeWebhookSecret } from '@/lib/env';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
@@ -181,11 +181,14 @@ export async function POST(request: Request) {
   const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || undefined;
   const userAgent = headersList.get('user-agent') || undefined;
 
+  // Get Stripe client for API calls
+  const stripe = await getStripeClient();
+
   let event: Stripe.Event;
 
   try {
     // Verify webhook signature
-    const webhookSecret = getStripeWebhookSecret();
+    const webhookSecret = await getStripeWebhookSecret();
 
     if (!webhookSecret) {
       console.warn(

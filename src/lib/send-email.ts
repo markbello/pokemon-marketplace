@@ -4,7 +4,7 @@ import OrderConfirmationEmail from '../emails/OrderConfirmation';
 import SellerOrderNotificationEmail from '../emails/SellerOrderNotification';
 import { logAuditEvent } from '@/lib/audit';
 import { getOrderDataForEmail } from '@/lib/email-helpers';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/server-utils';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 
@@ -104,7 +104,7 @@ export async function sendOrderConfirmationEmail(
       return { success: false, error };
     }
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const orderUrl = `${baseUrl}/orders/${orderId}`;
     const logoUrl = `${baseUrl}/kado-logo.jpg`;
     const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
@@ -192,7 +192,7 @@ export async function sendTestEmail(toEmail: string): Promise<SendResult> {
   }
 
   try {
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const orderDate = new Date();
     const { data, error } = await resendClient.emails.send({
       from: `Kado.io <${EMAIL_ADDRESSES.orders}>`,
@@ -292,7 +292,7 @@ export async function sendSellerOrderNotificationEmail(
       return { success: false, error: 'Order data unavailable' };
     }
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const orderUrl = `${baseUrl}/orders/${orderId}`;
     const logoUrl = `${baseUrl}/kado-logo.jpg`;
     const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
