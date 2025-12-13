@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 
 /**
  * Listing Purchase Success Page (PM-39 - Read-Only)
@@ -27,6 +27,7 @@ export default async function ListingPurchaseSuccessPage({
     notFound();
   }
 
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
   if (!session?.user?.sub) {
     redirect('/api/auth/login');

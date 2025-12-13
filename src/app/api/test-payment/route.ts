@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getBaseUrl } from '@/lib/server-utils';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const headersList = await headers();
 
     // 1. Check authentication
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {

@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import { PurchasesTable } from '@/components/purchases/PurchasesTable';
 import { AccountLayout } from '@/components/account/AccountLayout';
 
 export default async function PurchasesPage() {
+  const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
 
   if (!session?.user?.sub) {
@@ -28,7 +29,7 @@ export default async function PurchasesPage() {
     <AccountLayout>
       <div className="space-y-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Your Purchases</h1>
+          <h1 className="mb-2 text-3xl font-bold">Your Purchases</h1>
           <p className="text-muted-foreground">View your payment history</p>
         </div>
 
@@ -48,4 +49,3 @@ export default async function PurchasesPage() {
     </AccountLayout>
   );
 }
-

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { canSell } from '@/lib/seller-access';
 
 export async function GET() {
   try {
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {
@@ -56,15 +57,13 @@ export async function GET() {
   } catch (error) {
     console.error('[SellerListings][GET] Error fetching listings:', error);
 
-    return NextResponse.json(
-      { error: 'Failed to load listings' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to load listings' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {
@@ -99,10 +98,7 @@ export async function POST(request: Request) {
     };
 
     if (!displayTitle || typeof displayTitle !== 'string') {
-      return NextResponse.json(
-        { error: 'displayTitle is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'displayTitle is required' }, { status: 400 });
     }
 
     if (
@@ -118,10 +114,7 @@ export async function POST(request: Request) {
     }
 
     if (typeof currency !== 'string' || !currency.trim()) {
-      return NextResponse.json(
-        { error: 'currency must be a non-empty string' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'currency must be a non-empty string' }, { status: 400 });
     }
 
     const listing = await prisma.listing.create({
@@ -140,11 +133,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[SellerListings][POST] Error creating listing:', error);
 
-    return NextResponse.json(
-      { error: 'Failed to create listing' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 });
   }
 }
-
-

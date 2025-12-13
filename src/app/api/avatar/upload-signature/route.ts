@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { avatarService } from '@/lib/avatar-service';
 import { NextResponse } from 'next/server';
 
@@ -18,13 +18,11 @@ declare global {
 export async function GET() {
   try {
     // Verify authentication
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
-    
+
     if (!session?.user?.sub) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Simple rate limiting check (in-memory)
@@ -61,11 +59,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error generating upload signature:', error);
-    
-    return NextResponse.json(
-      { error: 'Failed to generate upload signature' },
-      { status: 500 },
-    );
+
+    return NextResponse.json({ error: 'Failed to generate upload signature' }, { status: 500 });
   }
 }
-

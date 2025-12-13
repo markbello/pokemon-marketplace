@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { NextResponse } from 'next/server';
 import { getManagementClient } from '@/lib/auth0-management';
 
@@ -8,6 +8,9 @@ import { getManagementClient } from '@/lib/auth0-management';
  */
 export async function GET() {
   try {
+    // Get Auth0 client with dynamic config based on request headers
+    const auth0 = await getAuth0Client();
+
     // Get the current user session
     // In Auth0 v4 App Router, getSession() is called without request parameter
     // The session is automatically read from cookies

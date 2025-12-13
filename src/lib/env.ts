@@ -31,6 +31,33 @@ async function getActualHostname(): Promise<string | undefined> {
 }
 
 /**
+ * Gets the full app base URL from request headers.
+ * This is critical for Auth0 and other services that need the exact origin.
+ * Returns the full URL with protocol (e.g., "https://kado.io" or "https://preview-abc.vercel.app")
+ */
+export async function getAppBaseUrl(): Promise<string> {
+  try {
+    const headersList = await headers();
+
+    // Try x-forwarded-proto and x-forwarded-host first (most reliable with proxies)
+    const protocol = headersList.get('x-forwarded-proto') || 'https';
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+
+    if (!host) {
+      throw new Error('Unable to determine host from request headers');
+    }
+
+    return `${protocol}://${host}`;
+  } catch (error) {
+    // Fallback to localhost for development
+    if (process.env.NODE_ENV === 'development') {
+      return 'http://localhost:3000';
+    }
+    throw error;
+  }
+}
+
+/**
  * Fallback: Gets hostname from VERCEL_URL for module-level initialization.
  * This is less accurate but works when headers() is not available.
  */
@@ -158,6 +185,40 @@ export async function getAuth0ManagementCredentials(): Promise<{
   }))!;
 
   return { domain, clientId, clientSecret };
+}
+
+/**
+ * Gets Auth0 SDK credentials for the current environment.
+ * Reuses the existing AUTH0_DOMAIN_PROD/AUTH0_DOMAIN_STAGING variables.
+ * These are used by the @auth0/nextjs-auth0 SDK.
+ */
+export async function getAuth0SdkCredentials(): Promise<{
+  issuerBaseUrl: string;
+  clientId: string;
+  clientSecret: string;
+  secret: string;
+}> {
+  // Reuse existing AUTH0_DOMAIN_PROD/AUTH0_DOMAIN_STAGING
+  const domain = (await pick('AUTH0_DOMAIN', { required: true, label: 'Auth0 domain' }))!;
+  const issuerBaseUrl = `https://${domain}`;
+
+  // Get client credentials with _PROD/_STAGING suffix
+  const clientId = (await pick('AUTH0_MANAGEMENT_CLIENT_ID', {
+    required: true,
+    label: 'Auth0 client ID',
+  }))!;
+  const clientSecret = (await pick('AUTH0_MANAGEMENT_CLIENT_SECRET', {
+    required: true,
+    label: 'Auth0 client secret',
+  }))!;
+
+  // AUTH0_SECRET is shared across environments (used for session encryption)
+  const secret = process.env.AUTH0_SECRET;
+  if (!secret) {
+    throw new Error('Missing required env var: AUTH0_SECRET');
+  }
+
+  return { issuerBaseUrl, clientId, clientSecret, secret };
 }
 
 export async function getDatabaseUrl(): Promise<string> {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { createStripeDashboardLink } from '@/lib/stripe-connect';
 import { getUserFromCache } from '@/lib/user';
 
@@ -10,6 +10,7 @@ import { getUserFromCache } from '@/lib/user';
 export async function POST() {
   try {
     // Check authentication
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
 
     if (!session?.user?.sub) {
@@ -44,10 +45,6 @@ export async function POST() {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

@@ -1,10 +1,13 @@
 import type { NextRequest } from 'next/server';
-import { auth0 } from '@/lib/auth0';
+import { getAuth0Client } from '@/lib/auth0';
 import { NextResponse } from 'next/server';
 import { isProfileComplete, shouldBypassProfileCheck } from '@/lib/auth-utils';
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
+
+  // Get Auth0 client with dynamic config based on request headers
+  const auth0 = await getAuth0Client();
 
   // Let the auth0 middleware handle auth routes first
   const response = await auth0.middleware(request);
@@ -29,7 +32,7 @@ export async function middleware(request: NextRequest) {
         // Only redirect if we have user_metadata (meaning user has started onboarding)
         // If no user_metadata exists, the session might not be refreshed yet, so be permissive
         const userMetadata = session.user.user_metadata;
-        
+
         // Only enforce redirect if user_metadata exists and profileComplete is explicitly false
         // This prevents redirecting users whose session hasn't refreshed with new metadata
         if (userMetadata && userMetadata.profileComplete === false) {
