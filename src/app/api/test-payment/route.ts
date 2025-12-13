@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { stripe } from '@/lib/stripe-client';
+import { getStripeClient } from '@/lib/stripe-client';
 
 /**
  * Test Payment API - Creates a test listing and purchase to verify webhook flow (PM-39)
@@ -23,6 +23,7 @@ import { stripe } from '@/lib/stripe-client';
  */
 export async function POST(request: Request) {
   try {
+    const stripe = await getStripeClient();
     const headersList = await headers();
 
     // 1. Check authentication

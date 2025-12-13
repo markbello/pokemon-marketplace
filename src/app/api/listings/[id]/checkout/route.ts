@@ -7,10 +7,11 @@ import { getBaseUrl } from '@/lib/utils';
 import { getOrCreateStripeCustomer } from '@/lib/stripe-customer';
 import { getOrCreateUser, getPreferredEmail } from '@/lib/user';
 import { logAuditEvent } from '@/lib/audit';
-import { stripe } from '@/lib/stripe-client';
+import { getStripeClient } from '@/lib/stripe-client';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const stripe = await getStripeClient();
     const headersList = await headers();
     const session = await auth0.getSession();
 

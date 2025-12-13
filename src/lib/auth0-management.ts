@@ -1,8 +1,8 @@
 import { ManagementClient } from 'auth0';
-import { getAuth0ManagementCredentials } from '@/lib/env';
+import { getAuth0ManagementCredentialsSync } from '@/lib/env';
 
 export function getManagementClient(): ManagementClient {
-  const { domain, clientId, clientSecret } = getAuth0ManagementCredentials();
+  const { domain, clientId, clientSecret } = getAuth0ManagementCredentialsSync();
 
   return new ManagementClient({
     domain,

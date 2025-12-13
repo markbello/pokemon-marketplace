@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { getDatabaseUrl } from '@/lib/env';
+import { getDatabaseUrlSync } from '@/lib/env';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -10,7 +10,7 @@ export const prisma =
   new PrismaClient({
     datasources: {
       db: {
-        url: getDatabaseUrl(),
+        url: getDatabaseUrlSync(),
       },
     },
   });

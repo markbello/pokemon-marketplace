@@ -10,7 +10,7 @@ import { TestEmailSender } from '@/components/home/TestEmailSender';
 import { detectRuntimeEnvironment } from '@/lib/env';
 
 export default async function Home() {
-  const runtime = detectRuntimeEnvironment();
+  const runtime = await detectRuntimeEnvironment();
   const session = await auth0.getSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.sub;

@@ -1,3 +1,5 @@
+import { headers } from 'next/headers';
+
 export type RuntimeEnvironment = 'prod' | 'staging';
 
 const PROD_HOSTNAMES = new Set(['kado.io', 'www.kado.io']);
@@ -11,30 +13,72 @@ function normalizeHostname(hostname: string | undefined): string | undefined {
     .replace(/:\d+$/, '');
 }
 
-function getDeploymentHostname(): string | undefined {
+/**
+ * Gets the actual hostname from the request headers.
+ * This returns the domain the user is actually visiting (e.g., "kado.io"),
+ * not Vercel's internal routing URL.
+ */
+async function getActualHostname(): Promise<string | undefined> {
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    return normalizeHostname(host || undefined);
+  } catch {
+    // headers() can only be called in server contexts (API routes, server components)
+    // If we're in a different context (e.g., module initialization), return undefined
+    return undefined;
+  }
+}
+
+/**
+ * Fallback: Gets hostname from VERCEL_URL for module-level initialization.
+ * This is less accurate but works when headers() is not available.
+ */
+function getFallbackHostname(): string | undefined {
   const vercelUrl = process.env.VERCEL_URL;
-  if (!vercelUrl) return undefined;
   return normalizeHostname(vercelUrl);
 }
 
-export function detectRuntimeEnvironment(): RuntimeEnvironment {
-  const hostname = getDeploymentHostname();
-
-  // Preview deployments should behave like staging (test Stripe, staging Auth0, staging DB)
+/**
+ * Core environment detection logic.
+ */
+function detectEnvironmentFromHostname(hostname: string | undefined): RuntimeEnvironment {
+  // Preview deployments (.vercel.app) → staging
   if (hostname?.endsWith('.vercel.app')) {
     return 'staging';
   }
 
+  // Explicit staging domain → staging
   if (hostname && STAGING_HOSTNAMES.has(hostname)) {
     return 'staging';
   }
 
+  // Production domains → prod
   if (hostname && PROD_HOSTNAMES.has(hostname)) {
     return 'prod';
   }
 
-  // Local dev or unknown host: treat as staging for safety.
+  // Safe default: Local dev or unknown host: treat as staging for safety
   return 'staging';
+}
+
+/**
+ * Detects the runtime environment based on the actual hostname from request headers.
+ * PREFERRED: Use this in server components and API routes for accurate detection.
+ */
+export async function detectRuntimeEnvironment(): Promise<RuntimeEnvironment> {
+  const hostname = await getActualHostname();
+  return detectEnvironmentFromHostname(hostname);
+}
+
+/**
+ * Synchronous environment detection using VERCEL_URL fallback.
+ * USE ONLY: For module-level initialization where headers() is not available.
+ * Less accurate than async version - use detectRuntimeEnvironment() when possible.
+ */
+export function detectRuntimeEnvironmentSync(): RuntimeEnvironment {
+  const hostname = getFallbackHostname();
+  return detectEnvironmentFromHostname(hostname);
 }
 
 type EnvPickOptions = {
@@ -42,8 +86,12 @@ type EnvPickOptions = {
   label?: string;
 };
 
-function pick(base: string, options?: EnvPickOptions): string | undefined {
-  const env = detectRuntimeEnvironment();
+/**
+ * Picks the correct environment variable based on detected environment.
+ * PREFERRED: Use this in server components and API routes.
+ */
+async function pick(base: string, options?: EnvPickOptions): Promise<string | undefined> {
+  const env = await detectRuntimeEnvironment();
   const suffix = env === 'prod' ? 'PROD' : 'STAGING';
 
   const value = process.env[`${base}_${suffix}`];
@@ -57,29 +105,89 @@ function pick(base: string, options?: EnvPickOptions): string | undefined {
   return value;
 }
 
-export function getStripeSecretKey() {
-  return pick('STRIPE_SECRET_KEY', { required: true, label: 'Stripe secret key' })!;
+/**
+ * Synchronous version using VERCEL_URL fallback.
+ * USE ONLY: For module-level initialization.
+ */
+function pickSync(base: string, options?: EnvPickOptions): string | undefined {
+  const env = detectRuntimeEnvironmentSync();
+  const suffix = env === 'prod' ? 'PROD' : 'STAGING';
+
+  const value = process.env[`${base}_${suffix}`];
+
+  if (!value && options?.required) {
+    throw new Error(
+      `Missing env var: ${base}_${suffix}${options.label ? ` (${options.label})` : ''}`,
+    );
+  }
+
+  return value;
 }
 
-export function getStripeWebhookSecret() {
+// === ASYNC VERSIONS (PREFERRED) ===
+
+export async function getStripeSecretKey(): Promise<string> {
+  return (await pick('STRIPE_SECRET_KEY', { required: true, label: 'Stripe secret key' }))!;
+}
+
+export async function getStripePublishableKey(): Promise<string> {
+  return (await pick('STRIPE_PUBLISHABLE_KEY', {
+    required: true,
+    label: 'Stripe publishable key',
+  }))!;
+}
+
+export async function getStripeWebhookSecret(): Promise<string | undefined> {
   // optional in dev (signature verification skipped)
   return pick('STRIPE_WEBHOOK_SECRET');
 }
 
-export function getAuth0ManagementCredentials() {
-  const domain = pick('AUTH0_DOMAIN', { required: true, label: 'Auth0 domain' })!;
-  const clientId = pick('AUTH0_MANAGEMENT_CLIENT_ID', {
+export async function getAuth0ManagementCredentials(): Promise<{
+  domain: string;
+  clientId: string;
+  clientSecret: string;
+}> {
+  const domain = (await pick('AUTH0_DOMAIN', { required: true, label: 'Auth0 domain' }))!;
+  const clientId = (await pick('AUTH0_MANAGEMENT_CLIENT_ID', {
+    required: true,
+    label: 'Auth0 management client id',
+  }))!;
+  const clientSecret = (await pick('AUTH0_MANAGEMENT_CLIENT_SECRET', {
+    required: true,
+    label: 'Auth0 management client secret',
+  }))!;
+
+  return { domain, clientId, clientSecret };
+}
+
+export async function getDatabaseUrl(): Promise<string> {
+  return (await pick('DATABASE_URL', { required: true, label: 'Database URL' }))!;
+}
+
+// === SYNC VERSIONS (FALLBACK - Use only for module-level initialization) ===
+
+export function getStripeSecretKeySync(): string {
+  return pickSync('STRIPE_SECRET_KEY', { required: true, label: 'Stripe secret key' })!;
+}
+
+export function getDatabaseUrlSync(): string {
+  return pickSync('DATABASE_URL', { required: true, label: 'Database URL' })!;
+}
+
+export function getAuth0ManagementCredentialsSync(): {
+  domain: string;
+  clientId: string;
+  clientSecret: string;
+} {
+  const domain = pickSync('AUTH0_DOMAIN', { required: true, label: 'Auth0 domain' })!;
+  const clientId = pickSync('AUTH0_MANAGEMENT_CLIENT_ID', {
     required: true,
     label: 'Auth0 management client id',
   })!;
-  const clientSecret = pick('AUTH0_MANAGEMENT_CLIENT_SECRET', {
+  const clientSecret = pickSync('AUTH0_MANAGEMENT_CLIENT_SECRET', {
     required: true,
     label: 'Auth0 management client secret',
   })!;
 
   return { domain, clientId, clientSecret };
-}
-
-export function getDatabaseUrl() {
-  return pick('DATABASE_URL', { required: true, label: 'Database URL' })!;
 }
