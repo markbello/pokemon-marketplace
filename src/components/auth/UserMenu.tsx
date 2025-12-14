@@ -90,12 +90,21 @@ export default function UserMenu() {
     return <div className="bg-muted h-12 w-12 animate-pulse rounded-full" />;
   }
 
-  // If no user, show sign in button only
+  // If no user, show sign up and sign in buttons (PM-65)
   if (!user) {
     return (
-      <Button asChild>
-        <Link href="/api/auth/login" prefetch={false}>Sign In</Link>
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button variant="outline" asChild>
+          <Link href="/api/auth/login" prefetch={false}>
+            Sign In
+          </Link>
+        </Button>
+        <Button asChild>
+          <Link href="/signup" prefetch={false}>
+            Sign Up
+          </Link>
+        </Button>
+      </div>
     );
   }
 
@@ -179,7 +188,11 @@ export default function UserMenu() {
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/api/auth/logout" prefetch={false} className="flex items-center gap-2 text-destructive focus:text-destructive">
+          <Link
+            href="/api/auth/logout"
+            prefetch={false}
+            className="text-destructive focus:text-destructive flex items-center gap-2"
+          >
             <LogOut className="h-4 w-4" />
             Sign Out
           </Link>

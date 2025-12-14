@@ -16,6 +16,8 @@
     "db:studio": "dotenv -e .env.local -- npx prisma studio",
     "db:studio:remote": "dotenv -e .env.production.local -- npx prisma studio",
     "db:seed": "dotenv -e .env.local -- npx prisma db seed",
+    "db:seed:invitations": "dotenv -e .env.local -- tsx prisma/seed-invitation-codes.ts",
+    "db:seed:invitations:remote": "dotenv -e .env.production.local -- tsx prisma/seed-invitation-codes-production.ts",
     "db:reset": "dotenv -e .env.local -- npx prisma migrate reset",
     "db:deploy": "dotenv -e .env.local -- npx prisma migrate deploy",
     "db:push": "dotenv -e .env.local -- npx prisma db push",
