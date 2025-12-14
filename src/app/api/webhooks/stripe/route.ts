@@ -97,6 +97,34 @@ async function processListingPurchase(params: {
           include: { listing: true },
         });
 
+    // Create ORDER_CREATED event if this is a new paid order (not already paid)
+    if (!orderAlreadyPaid) {
+      // Create ORDER_CREATED event with the original order creation time
+      await tx.orderEvent.create({
+        data: {
+          orderId,
+          type: 'ORDER_CREATED',
+          timestamp: order.createdAt,
+          metadata: {
+            listingId: order.listingId,
+          },
+        },
+      });
+
+      // Create PAYMENT_RECEIVED event
+      await tx.orderEvent.create({
+        data: {
+          orderId,
+          type: 'PAYMENT_RECEIVED',
+          metadata: {
+            stripePaymentIntentId,
+            stripeSessionId,
+            amount: taxInfo?.totalCents,
+          },
+        },
+      });
+    }
+
     // Mark listing as SOLD if:
     // 1. Order is linked to a listing
     // 2. Listing exists and is still PUBLISHED (idempotency check)

@@ -225,6 +225,15 @@ export async function getDatabaseUrl(): Promise<string> {
   return (await pick('DATABASE_URL', { required: true, label: 'Database URL' }))!;
 }
 
+export async function getShippoToken(): Promise<string> {
+  return (await pick('SHIPPO_TOKEN', { required: true, label: 'Shippo API token' }))!;
+}
+
+export async function getShippoWebhookSecret(): Promise<string | undefined> {
+  // Optional - used for webhook signature verification
+  return pick('SHIPPO_WEBHOOK_SECRET');
+}
+
 // === SYNC VERSIONS (FALLBACK - Use only for module-level initialization) ===
 
 export function getStripeSecretKeySync(): string {
@@ -251,4 +260,8 @@ export function getAuth0ManagementCredentialsSync(): {
   })!;
 
   return { domain, clientId, clientSecret };
+}
+
+export function getShippoTokenSync(): string {
+  return pickSync('SHIPPO_TOKEN', { required: true, label: 'Shippo API token' })!;
 }
