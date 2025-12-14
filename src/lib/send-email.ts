@@ -2,6 +2,10 @@ import { Resend } from 'resend';
 
 import OrderConfirmationEmail from '../emails/OrderConfirmation';
 import SellerOrderNotificationEmail from '../emails/SellerOrderNotification';
+import OrderShippedEmail from '../emails/OrderShipped';
+import OrderInTransitEmail from '../emails/OrderInTransit';
+import OrderDeliveredEmail from '../emails/OrderDelivered';
+import DeliveryExceptionEmail from '../emails/DeliveryException';
 import { logAuditEvent } from '@/lib/audit';
 import { getOrderDataForEmail } from '@/lib/email-helpers';
 import { getBaseUrl } from '@/lib/server-utils';
@@ -359,6 +363,609 @@ export async function sendSellerOrderNotificationEmail(
       },
     });
     console.error('[Email] Error sending seller notification', err);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Get tracking URL for a carrier and tracking number
+ */
+function getTrackingUrl(carrier: string, trackingNumber: string): string {
+  const trackingUrls: Record<string, string> = {
+    usps: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+    ups: `https://www.ups.com/track?tracknum=${trackingNumber}`,
+    fedex: `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`,
+    dhl_express: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
+  };
+
+  return trackingUrls[carrier] || `https://www.google.com/search?q=${trackingNumber}`;
+}
+
+/**
+ * Send order shipped email to buyer
+ */
+export async function sendOrderShippedEmail(
+  orderId: string,
+  options: SendEmailOptions = {},
+): Promise<SendResult> {
+  const { ipAddress, userAgent } = options;
+
+  if (!resendClient) {
+    const error = 'Resend API key not configured';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_SHIPPED',
+        reason: 'missing_resend_api_key',
+      },
+    });
+    return { success: false, error };
+  }
+
+  try {
+    // Get order with shipping info
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        shippingCarrier: true,
+        trackingNumber: true,
+        shippedAt: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (!order.shippingCarrier || !order.trackingNumber) {
+      return { success: false, error: 'Shipping information not available' };
+    }
+
+    const emailData = await getOrderDataForEmail(orderId);
+
+    if (!emailData) {
+      return { success: false, error: 'Order data not available' };
+    }
+
+    if (!emailData.customerEmail) {
+      return { success: false, error: 'Customer email not available' };
+    }
+
+    // Get seller email
+    let sellerEmail: string | null = null;
+    if (order.sellerId) {
+      try {
+        const seller = await getOrCreateUser(order.sellerId);
+        sellerEmail = getPreferredEmail(seller) || null;
+      } catch (err) {
+        console.warn('[Email] Could not fetch seller email:', err);
+      }
+    }
+
+    const baseUrl = await getBaseUrl();
+    const orderUrl = `${baseUrl}/orders/${orderId}`;
+    const logoUrl = `${baseUrl}/kado-logo.jpg`;
+    const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
+    const trackingUrl = getTrackingUrl(order.shippingCarrier, order.trackingNumber);
+
+    // Build recipient list (buyer + seller)
+    const recipients = [emailData.customerEmail];
+    if (sellerEmail && sellerEmail !== emailData.customerEmail) {
+      recipients.push(sellerEmail);
+    }
+
+    const { data, error } = await resendClient.emails.send({
+      from: `Kado.io <${EMAIL_ADDRESSES.shipping}>`,
+      to: recipients,
+      replyTo: EMAIL_ADDRESSES.support,
+      subject: `Your Order Has Shipped - #${emailData.orderNumber}`,
+      react: OrderShippedEmail({
+        customerName: emailData.customerName ?? 'there',
+        orderNumber: emailData.orderNumber,
+        orderDate: emailData.orderDate,
+        productName: emailData.productName,
+        productImage: emailData.productImageUrl || fallbackImage,
+        shippingCarrier: order.shippingCarrier.toUpperCase(),
+        trackingNumber: order.trackingNumber,
+        trackingUrl,
+        estimatedDelivery: null, // TODO: Could be enhanced with Shippo ETA
+        shippingAddress: emailData.shippingAddress,
+        ctaUrl: orderUrl,
+        supportEmail: EMAIL_ADDRESSES.support,
+        logoUrl,
+      }),
+    });
+
+    if (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+      await logEmailAudit({
+        orderId,
+        action: 'EMAIL_FAILED',
+        ipAddress,
+        userAgent,
+        metadata: {
+          emailType: 'ORDER_SHIPPED',
+          reason: 'resend_error',
+          message,
+        },
+      });
+      return { success: false, error: message };
+    }
+
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_SENT',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_SHIPPED',
+        resendId: data?.id,
+        to: recipients,
+        carrier: order.shippingCarrier,
+        trackingNumber: order.trackingNumber,
+      },
+    });
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_SHIPPED',
+        reason: 'unexpected_error',
+        message,
+      },
+    });
+    console.error('[Email] Error sending order shipped email', err);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Send order in transit email to buyer and seller
+ */
+export async function sendOrderInTransitEmail(
+  orderId: string,
+  options: SendEmailOptions = {},
+): Promise<SendResult> {
+  const { ipAddress, userAgent } = options;
+
+  if (!resendClient) {
+    const error = 'Resend API key not configured';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_IN_TRANSIT',
+        reason: 'missing_resend_api_key',
+      },
+    });
+    return { success: false, error };
+  }
+
+  try {
+    // Get order with shipping info
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        shippingCarrier: true,
+        trackingNumber: true,
+        shippedAt: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (!order.shippingCarrier || !order.trackingNumber) {
+      return { success: false, error: 'Shipping information not available' };
+    }
+
+    const emailData = await getOrderDataForEmail(orderId);
+
+    if (!emailData) {
+      return { success: false, error: 'Order data not available' };
+    }
+
+    if (!emailData.customerEmail) {
+      return { success: false, error: 'Customer email not available' };
+    }
+
+    // Get seller email
+    let sellerEmail: string | null = null;
+    if (order.sellerId) {
+      try {
+        const seller = await getOrCreateUser(order.sellerId);
+        sellerEmail = getPreferredEmail(seller) || null;
+      } catch (err) {
+        console.warn('[Email] Could not fetch seller email:', err);
+      }
+    }
+
+    const baseUrl = await getBaseUrl();
+    const orderUrl = `${baseUrl}/orders/${orderId}`;
+    const logoUrl = `${baseUrl}/kado-logo.jpg`;
+    const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
+    const trackingUrl = getTrackingUrl(order.shippingCarrier, order.trackingNumber);
+
+    // Build recipient list (buyer + seller)
+    const recipients = [emailData.customerEmail];
+    if (sellerEmail && sellerEmail !== emailData.customerEmail) {
+      recipients.push(sellerEmail);
+    }
+
+    const { data, error } = await resendClient.emails.send({
+      from: `Kado.io <${EMAIL_ADDRESSES.shipping}>`,
+      to: recipients,
+      replyTo: EMAIL_ADDRESSES.support,
+      subject: `Your Order Is In Transit - #${emailData.orderNumber}`,
+      react: OrderInTransitEmail({
+        customerName: emailData.customerName ?? 'there',
+        orderNumber: emailData.orderNumber,
+        orderDate: emailData.orderDate,
+        productName: emailData.productName,
+        productImage: emailData.productImageUrl || fallbackImage,
+        shippingCarrier: order.shippingCarrier.toUpperCase(),
+        trackingNumber: order.trackingNumber,
+        trackingUrl,
+        estimatedDelivery: null, // TODO: Could be enhanced with Shippo ETA
+        shippingAddress: emailData.shippingAddress,
+        ctaUrl: orderUrl,
+        supportEmail: EMAIL_ADDRESSES.support,
+        logoUrl,
+      }),
+    });
+
+    if (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+      await logEmailAudit({
+        orderId,
+        action: 'EMAIL_FAILED',
+        ipAddress,
+        userAgent,
+        metadata: {
+          emailType: 'ORDER_IN_TRANSIT',
+          reason: 'resend_error',
+          message,
+        },
+      });
+      return { success: false, error: message };
+    }
+
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_SENT',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_IN_TRANSIT',
+        resendId: data?.id,
+        to: recipients,
+        carrier: order.shippingCarrier,
+        trackingNumber: order.trackingNumber,
+      },
+    });
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_IN_TRANSIT',
+        reason: 'unexpected_error',
+        message,
+      },
+    });
+    console.error('[Email] Error sending order in transit email', err);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Send order delivered email to buyer and seller
+ */
+export async function sendOrderDeliveredEmail(
+  orderId: string,
+  options: SendEmailOptions = {},
+): Promise<SendResult> {
+  const { ipAddress, userAgent } = options;
+
+  if (!resendClient) {
+    const error = 'Resend API key not configured';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_DELIVERED',
+        reason: 'missing_resend_api_key',
+      },
+    });
+    return { success: false, error };
+  }
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        deliveredAt: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (!order.deliveredAt) {
+      return { success: false, error: 'Delivery date not available' };
+    }
+
+    const emailData = await getOrderDataForEmail(orderId);
+
+    if (!emailData) {
+      return { success: false, error: 'Order data not available' };
+    }
+
+    if (!emailData.customerEmail) {
+      return { success: false, error: 'Customer email not available' };
+    }
+
+    // Get seller email
+    let sellerEmail: string | null = null;
+    if (order.sellerId) {
+      try {
+        const seller = await getOrCreateUser(order.sellerId);
+        sellerEmail = getPreferredEmail(seller) || null;
+      } catch (err) {
+        console.warn('[Email] Could not fetch seller email:', err);
+      }
+    }
+
+    const baseUrl = await getBaseUrl();
+    const browseUrl = `${baseUrl}/marketplace`;
+    const logoUrl = `${baseUrl}/kado-logo.jpg`;
+    const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
+
+    // Build recipient list (buyer + seller)
+    const recipients = [emailData.customerEmail];
+    if (sellerEmail && sellerEmail !== emailData.customerEmail) {
+      recipients.push(sellerEmail);
+    }
+
+    const { data, error } = await resendClient.emails.send({
+      from: `Kado.io <${EMAIL_ADDRESSES.shipping}>`,
+      to: recipients,
+      replyTo: EMAIL_ADDRESSES.support,
+      subject: `Your Order Has Been Delivered - #${emailData.orderNumber}`,
+      react: OrderDeliveredEmail({
+        customerName: emailData.customerName ?? 'there',
+        orderNumber: emailData.orderNumber,
+        orderDate: emailData.orderDate,
+        deliveredDate: order.deliveredAt,
+        productName: emailData.productName,
+        productImage: emailData.productImageUrl || fallbackImage,
+        shippingAddress: emailData.shippingAddress,
+        browseUrl,
+        supportEmail: EMAIL_ADDRESSES.support,
+        logoUrl,
+      }),
+    });
+
+    if (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+      await logEmailAudit({
+        orderId,
+        action: 'EMAIL_FAILED',
+        ipAddress,
+        userAgent,
+        metadata: {
+          emailType: 'ORDER_DELIVERED',
+          reason: 'resend_error',
+          message,
+        },
+      });
+      return { success: false, error: message };
+    }
+
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_SENT',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_DELIVERED',
+        resendId: data?.id,
+        to: recipients,
+      },
+    });
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'ORDER_DELIVERED',
+        reason: 'unexpected_error',
+        message,
+      },
+    });
+    console.error('[Email] Error sending order delivered email', err);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Send delivery exception email to buyer and seller
+ */
+export async function sendDeliveryExceptionEmail(
+  orderId: string,
+  exceptionReason: string,
+  options: SendEmailOptions = {},
+): Promise<SendResult> {
+  const { ipAddress, userAgent } = options;
+
+  if (!resendClient) {
+    const error = 'Resend API key not configured';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'DELIVERY_EXCEPTION',
+        reason: 'missing_resend_api_key',
+      },
+    });
+    return { success: false, error };
+  }
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        shippingCarrier: true,
+        trackingNumber: true,
+        sellerName: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (!order.shippingCarrier || !order.trackingNumber) {
+      return { success: false, error: 'Shipping information not available' };
+    }
+
+    const emailData = await getOrderDataForEmail(orderId);
+
+    if (!emailData) {
+      return { success: false, error: 'Order data not available' };
+    }
+
+    if (!emailData.customerEmail) {
+      return { success: false, error: 'Customer email not available' };
+    }
+
+    // Get seller email
+    let sellerEmail: string | null = null;
+    if (order.sellerId) {
+      try {
+        const seller = await getOrCreateUser(order.sellerId);
+        sellerEmail = getPreferredEmail(seller) || null;
+      } catch (err) {
+        console.warn('[Email] Could not fetch seller email:', err);
+      }
+    }
+
+    const baseUrl = await getBaseUrl();
+    const logoUrl = `${baseUrl}/kado-logo.jpg`;
+    const fallbackImage = `${baseUrl}/kado-placeholder.jpg`;
+    const trackingUrl = getTrackingUrl(order.shippingCarrier, order.trackingNumber);
+
+    // Build recipient list (buyer + seller)
+    const recipients = [emailData.customerEmail];
+    if (sellerEmail && sellerEmail !== emailData.customerEmail) {
+      recipients.push(sellerEmail);
+    }
+
+    const { data, error } = await resendClient.emails.send({
+      from: `Kado.io <${EMAIL_ADDRESSES.shipping}>`,
+      to: recipients,
+      replyTo: EMAIL_ADDRESSES.support,
+      subject: `Delivery Issue - Order #${emailData.orderNumber}`,
+      react: DeliveryExceptionEmail({
+        customerName: emailData.customerName ?? 'there',
+        orderNumber: emailData.orderNumber,
+        orderDate: emailData.orderDate,
+        productName: emailData.productName,
+        productImage: emailData.productImageUrl || fallbackImage,
+        shippingCarrier: order.shippingCarrier.toUpperCase(),
+        trackingNumber: order.trackingNumber,
+        trackingUrl,
+        exceptionReason,
+        shippingAddress: emailData.shippingAddress,
+        sellerName: order.sellerName,
+        supportEmail: EMAIL_ADDRESSES.support,
+        logoUrl,
+      }),
+    });
+
+    if (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+      await logEmailAudit({
+        orderId,
+        action: 'EMAIL_FAILED',
+        ipAddress,
+        userAgent,
+        metadata: {
+          emailType: 'DELIVERY_EXCEPTION',
+          reason: 'resend_error',
+          message,
+        },
+      });
+      return { success: false, error: message };
+    }
+
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_SENT',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'DELIVERY_EXCEPTION',
+        resendId: data?.id,
+        to: recipients,
+        exceptionReason,
+      },
+    });
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    await logEmailAudit({
+      orderId,
+      action: 'EMAIL_FAILED',
+      ipAddress,
+      userAgent,
+      metadata: {
+        emailType: 'DELIVERY_EXCEPTION',
+        reason: 'unexpected_error',
+        message,
+      },
+    });
+    console.error('[Email] Error sending delivery exception email', err);
     return { success: false, error: message };
   }
 }

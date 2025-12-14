@@ -17,6 +17,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  OrdersListingsTable,
+  type OrderListingItem,
+} from '@/components/orders/OrdersListingsTable';
+import {
   Loader2,
   CheckCircle2,
   Clock,
@@ -28,6 +38,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { isClientStaging } from '@/lib/client-env';
 
 interface SellerStatus {
   hasAccount: boolean;
@@ -57,6 +68,10 @@ interface Listing {
   orderId: string | null;
   buyerName: string | null;
   saleTotalCents: number | null;
+  // Shipping info
+  orderShippingCarrier: string | null;
+  orderTrackingNumber: string | null;
+  orderFulfillmentStatus: string | null;
 }
 
 function SellerDashboardContent() {
@@ -207,7 +222,11 @@ function SellerDashboardContent() {
     }
   };
 
-  const beginEditListing = (listing: Listing) => {
+  const beginEditListing = (item: OrderListingItem) => {
+    // Find the original listing
+    const listing = listings.find((l) => l.id === item.id);
+    if (!listing) return;
+
     setEditingListing(listing);
     setEditTitle(listing.displayTitle);
     setEditPrice((listing.askingPriceCents / 100).toString());
@@ -579,126 +598,30 @@ function SellerDashboardContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-3">
-              {listings.length === 0 ? (
-                <div className="rounded-md border border-dashed p-4">
-                  <p className="text-sm font-medium">You haven&apos;t listed any items yet.</p>
-                  <p className="text-muted-foreground text-sm">
-                    Create your first listing to start selling. You can always unpublish or edit it
-                    later using the New listing button above.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="py-2 pr-4">Title</th>
-                        <th className="py-2 pr-4">Price</th>
-                        <th className="py-2 pr-4">Status</th>
-                        <th className="py-2 pr-4">Activity</th>
-                        <th className="py-2 pr-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {listings.map((listing) => (
-                        <tr key={listing.id} className="border-b last:border-0">
-                          <td className="py-2 pr-4">
-                            <div className="font-medium">{listing.displayTitle}</div>
-                            {listing.sellerNotes && (
-                              <div className="text-muted-foreground line-clamp-2 text-xs">
-                                {listing.sellerNotes}
-                              </div>
-                            )}
-                            {listing.status === 'SOLD' && listing.buyerName && (
-                              <div className="text-xs text-green-600 mt-0.5">
-                                Sold to {listing.buyerName}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-2 pr-4">
-                            <div>
-                              {(listing.askingPriceCents / 100).toLocaleString('en-US', {
-                                style: 'currency',
-                                currency: listing.currency || 'USD',
-                              })}
-                            </div>
-                            {listing.status === 'SOLD' && listing.saleTotalCents && listing.saleTotalCents !== listing.askingPriceCents && (
-                              <div className="text-xs text-muted-foreground">
-                                Total: {(listing.saleTotalCents / 100).toLocaleString('en-US', {
-                                  style: 'currency',
-                                  currency: listing.currency || 'USD',
-                                })}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-2 pr-4">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                listing.status === 'PUBLISHED'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : listing.status === 'DRAFT'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-green-100 text-green-800'
-                              }`}
-                            >
-                              {listing.status === 'SOLD' ? '✓ Sold' : listing.status === 'PUBLISHED' ? 'Published' : 'Draft'}
-                            </span>
-                          </td>
-                          <td className="py-2 pr-4">
-                            <span className="text-muted-foreground text-xs">
-                              {listing.status === 'SOLD' && listing.soldAt ? (
-                                <>
-                                  Sold {new Date(listing.soldAt).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  })}
-                                </>
-                              ) : (
-                                <>
-                                  Listed {new Date(listing.createdAt).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  })}
-                                </>
-                              )}
-                            </span>
-                          </td>
-                          <td className="py-2 pl-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              {listing.status === 'SOLD' && listing.orderId ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                >
-                                  <Link href={`/orders/${listing.orderId}`}>
-                                    <Package className="mr-1 h-3 w-3" />
-                                    View Order
-                                  </Link>
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => beginEditListing(listing)}
-                                  disabled={isSavingListing}
-                                >
-                                  <Pencil className="mr-1 h-3 w-3" />
-                                  Edit
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <OrdersListingsTable
+              items={listings.map((listing) => ({
+                id: listing.id,
+                displayTitle: listing.displayTitle,
+                sellerNotes: listing.sellerNotes,
+                askingPriceCents: listing.askingPriceCents,
+                currency: listing.currency,
+                status: listing.status,
+                imageUrl: listing.imageUrl,
+                createdAt: listing.createdAt,
+                updatedAt: listing.updatedAt,
+                soldAt: listing.soldAt,
+                orderId: listing.orderId,
+                buyerOrSellerName: listing.buyerName,
+                saleTotalCents: listing.saleTotalCents,
+                orderShippingCarrier: listing.orderShippingCarrier,
+                orderTrackingNumber: listing.orderTrackingNumber,
+                orderFulfillmentStatus: listing.orderFulfillmentStatus,
+              }))}
+              mode="seller"
+              isStaging={isClientStaging()}
+              onEditListing={beginEditListing}
+              onShippingSuccess={fetchListings}
+            />
           </CardContent>
         </Card>
 

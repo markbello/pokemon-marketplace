@@ -7,9 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FormattedDate } from '@/components/FormattedDate';
+import { OrderHistory } from '@/components/orders/OrderHistory';
+import { ShippingPromptBanner } from '@/components/orders/ShippingPromptBanner';
 import Link from 'next/link';
-import { ArrowLeft, Package, CreditCard, Truck, MapPin, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Package,
+  CreditCard,
+  Truck,
+  MapPin,
+  AlertCircle,
+  ExternalLink,
+} from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { detectRuntimeEnvironment } from '@/lib/env';
 import Image from 'next/image';
 
 function getStatusBadge(status: string) {
@@ -27,6 +38,39 @@ function getStatusBadge(status: string) {
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
+}
+
+function getFulfillmentBadge(status: string) {
+  switch (status) {
+    case 'DELIVERED':
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">✓ Delivered</Badge>;
+    case 'SHIPPED':
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">🚚 Shipped</Badge>;
+    case 'IN_TRANSIT':
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">🚚 In Transit</Badge>;
+    case 'OUT_FOR_DELIVERY':
+      return (
+        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">🚚 Out for Delivery</Badge>
+      );
+    case 'EXCEPTION':
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">⚠️ Exception</Badge>;
+    case 'PROCESSING':
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">📦 Processing</Badge>
+      );
+    default:
+      return null;
+  }
+}
+
+function getTrackingUrl(carrier: string, trackingNumber: string): string {
+  const trackingUrls: Record<string, string> = {
+    usps: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+    ups: `https://www.ups.com/track?tracknum=${trackingNumber}`,
+    fedex: `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`,
+    dhl_express: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
+  };
+  return trackingUrls[carrier] || `https://www.google.com/search?q=${trackingNumber}`;
 }
 
 export default async function OrderDetailPage({
@@ -54,6 +98,9 @@ export default async function OrderDetailPage({
       buyer: {
         select: { displayName: true },
       },
+      events: {
+        orderBy: { timestamp: 'asc' },
+      },
     },
   });
 
@@ -64,6 +111,10 @@ export default async function OrderDetailPage({
 
   const isSeller = order.sellerId === userId;
   const isBuyer = order.buyerId === userId;
+
+  // Detect environment for shipping form
+  const environment = await detectRuntimeEnvironment();
+  const isStaging = environment === 'staging';
 
   // Fetch addresses from Stripe (privacy-by-design: addresses not stored locally)
   const addresses = await getOrderAddresses(order.id);
@@ -86,7 +137,7 @@ export default async function OrderDetailPage({
       </Link>
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-muted-foreground mb-1 text-sm">{isSeller ? 'Sale' : 'Purchase'}</p>
@@ -98,6 +149,7 @@ export default async function OrderDetailPage({
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge(order.status)}
+            {order.fulfillmentStatus !== 'PENDING' && getFulfillmentBadge(order.fulfillmentStatus)}
             {order.isTestPayment && (
               <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-800">
                 Test
@@ -106,6 +158,16 @@ export default async function OrderDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Shipping Prompt Banner for Sellers */}
+      {isSeller && order.status === 'PAID' && !order.shippingCarrier && !order.trackingNumber && (
+        <ShippingPromptBanner
+          orderId={order.id}
+          orderNumber={order.id.slice(-8).toUpperCase()}
+          isStaging={isStaging}
+          hasShippingAddress={!!addresses?.shipping}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Order Item(s) - Main content */}
@@ -161,78 +223,148 @@ export default async function OrderDetailPage({
             </CardContent>
           </Card>
 
-          {/* Addresses Section */}
-          {(addresses?.shipping || addresses?.billing) && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Shipping Address */}
-              {addresses?.shipping && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Truck className="h-4 w-4" />
-                      Shipping Address
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1 text-sm">
-                      {addresses.customerName && (
-                        <p className="font-medium">{addresses.customerName}</p>
-                      )}
-                      {formatAddress(addresses.shipping).map((line, i) => (
-                        <p key={i} className="text-muted-foreground">
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Billing Address */}
-              {addresses?.billing && !isSeller && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <MapPin className="h-4 w-4" />
-                      Billing Address
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1 text-sm">
-                      {addresses.customerName && (
-                        <p className="font-medium">{addresses.customerName}</p>
-                      )}
-                      {formatAddress(addresses.billing).map((line, i) => (
-                        <p key={i} className="text-muted-foreground">
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+          {/* Shipping Address - Full Width */}
+          {addresses?.shipping && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Truck className="h-4 w-4" />
+                  Shipping Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1 text-sm">
+                  {addresses.customerName && (
+                    <p className="font-medium">{addresses.customerName}</p>
+                  )}
+                  {formatAddress(addresses.shipping).map((line, i) => (
+                    <p key={i} className="text-muted-foreground">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Seller Fulfillment Notice */}
-          {isSeller && order.status === 'PAID' && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Action Required: Ship this item</AlertTitle>
-              <AlertDescription>
-                This order has been paid. Please ship the item to the buyer at the address shown
-                above.
-                {!addresses?.shipping && (
-                  <span className="mt-2 block text-amber-600">
-                    Note: Shipping address not available. Contact buyer for shipping details.
-                  </span>
+          {/* Seller Tracking Information */}
+          {isSeller && order.status === 'PAID' && order.shippingCarrier && order.trackingNumber && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Tracking Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Status</span>
+                  {getFulfillmentBadge(order.fulfillmentStatus)}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Carrier</span>
+                  <span className="font-medium">{order.shippingCarrier?.toUpperCase()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Tracking #</span>
+                  <span className="font-mono text-sm">{order.trackingNumber}</span>
+                </div>
+                {order.shippedAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Shipped</span>
+                    <span className="text-sm">
+                      <FormattedDate
+                        date={order.shippedAt}
+                        purchaseTimezone={order.purchaseTimezone}
+                      />
+                    </span>
+                  </div>
                 )}
-              </AlertDescription>
-            </Alert>
+                {order.deliveredAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Delivered</span>
+                    <span className="text-sm">
+                      <FormattedDate
+                        date={order.deliveredAt}
+                        purchaseTimezone={order.purchaseTimezone}
+                      />
+                    </span>
+                  </div>
+                )}
+                <Separator />
+                <a
+                  href={getTrackingUrl(order.shippingCarrier!, order.trackingNumber!)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                  Track Package
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Buyer Tracking Information */}
+          {isBuyer && order.shippingCarrier && order.trackingNumber && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Shipping & Tracking
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Status</span>
+                  {getFulfillmentBadge(order.fulfillmentStatus)}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Carrier</span>
+                  <span className="font-medium">{order.shippingCarrier.toUpperCase()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Tracking #</span>
+                  <span className="font-mono text-sm">{order.trackingNumber}</span>
+                </div>
+                {order.shippedAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Shipped</span>
+                    <span className="text-sm">
+                      <FormattedDate
+                        date={order.shippedAt}
+                        purchaseTimezone={order.purchaseTimezone}
+                      />
+                    </span>
+                  </div>
+                )}
+                {order.deliveredAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Delivered</span>
+                    <span className="text-sm">
+                      <FormattedDate
+                        date={order.deliveredAt}
+                        purchaseTimezone={order.purchaseTimezone}
+                      />
+                    </span>
+                  </div>
+                )}
+                <Separator />
+                <a
+                  href={getTrackingUrl(order.shippingCarrier, order.trackingNumber)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                  Track Your Package
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        {/* Sidebar - Order Summary */}
+        {/* Sidebar - Order Summary & History */}
         <div className="space-y-6">
           {/* Order Summary */}
           <Card>
@@ -271,36 +403,8 @@ export default async function OrderDetailPage({
             </CardContent>
           </Card>
 
-          {/* Payment Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Payment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status</span>
-                {getStatusBadge(order.status)}
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Currency</span>
-                <span>{order.currency}</span>
-              </div>
-              {addresses?.customerEmail && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Receipt sent to</span>
-                  <span className="max-w-[180px] truncate">{addresses.customerEmail}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Order ID for reference */}
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-xs">Order ID</p>
-              <p className="font-mono text-sm break-all">{order.id}</p>
-            </CardContent>
-          </Card>
+          {/* Order History Timeline */}
+          <OrderHistory order={order} />
         </div>
       </div>
     </div>

@@ -35,6 +35,17 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum FulfillmentStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  EXCEPTION
+  CANCELLED
+}
+
 model Order {
   id                    String      @id @default(cuid())
   
@@ -64,6 +75,14 @@ model Order {
   // Status tracking
   status                OrderStatus @default(PENDING)
   
+  // Shipping & fulfillment (PM-64)
+  shippingCarrier       String?              // USPS, UPS, FedEx, DHL
+  trackingNumber        String?              // Carrier tracking number
+  trackingId            String?              // Shippo tracking ID
+  shippedAt             DateTime?            // When seller marked as shipped (for quick queries)
+  deliveredAt           DateTime?            // When package was delivered (for quick queries)
+  fulfillmentStatus     FulfillmentStatus @default(PENDING)
+  
   // Test vs real transactions
   isTestPayment         Boolean     @default(false)
   
@@ -86,6 +105,39 @@ model Order {
   @@index([isTestPayment, createdAt])
   @@index([listingId])
   @@index([stripeCustomerId])
+  
+  // Relationships
+  events        OrderEvent[]
+}
+
+enum OrderEventType {
+  ORDER_CREATED
+  PAYMENT_RECEIVED
+  ORDER_SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  DELIVERY_EXCEPTION
+  ORDER_CANCELLED
+  ORDER_REFUNDED
+}
+
+model OrderEvent {
+  id          String         @id @default(cuid())
+  orderId     String
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  type        OrderEventType
+  timestamp   DateTime       @default(now())
+  
+  // Optional metadata (e.g., tracking info, exception reasons, etc.)
+  metadata    Json?
+  
+  // Who triggered the event (null for system/webhook events)
+  userId      String?
+  
+  @@index([orderId, timestamp])
+  @@index([type, timestamp])
 }
 
 model AuditLog {

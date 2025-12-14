@@ -28,6 +28,9 @@ export async function GET() {
             totalCents: true,
             currency: true,
             createdAt: true,
+            shippingCarrier: true,
+            trackingNumber: true,
+            fulfillmentStatus: true,
             buyer: {
               select: {
                 displayName: true,
@@ -50,6 +53,10 @@ export async function GET() {
         orderId: paidOrder?.id || null,
         buyerName: paidOrder?.buyer?.displayName || null,
         saleTotalCents: paidOrder?.totalCents || null,
+        // Shipping info (only populated if shipped)
+        orderShippingCarrier: paidOrder?.shippingCarrier || null,
+        orderTrackingNumber: paidOrder?.trackingNumber || null,
+        orderFulfillmentStatus: paidOrder?.fulfillmentStatus || null,
       };
     });
 

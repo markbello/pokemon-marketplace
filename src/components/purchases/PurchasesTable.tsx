@@ -86,7 +86,7 @@ const columns: ColumnDef<Order>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2 lg:px-4"
         >
-          Status
+          Payment
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -120,6 +120,71 @@ const columns: ColumnDef<Order>[] = [
                 ? '○ Cancelled'
                 : '✗ Refunded'}
         </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: 'fulfillmentStatus',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-8 px-2 lg:px-4"
+        >
+          Shipping
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const status = row.original.fulfillmentStatus;
+      const hasTracking = row.original.shippingCarrier && row.original.trackingNumber;
+
+      if (status === 'PENDING' && !hasTracking) {
+        return <span className="text-muted-foreground text-sm">Not shipped</span>;
+      }
+
+      switch (status) {
+        case 'DELIVERED':
+          return (
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">✓ Delivered</Badge>
+          );
+        case 'SHIPPED':
+        case 'IN_TRANSIT':
+        case 'OUT_FOR_DELIVERY':
+          return (
+            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">🚚 In Transit</Badge>
+          );
+        case 'EXCEPTION':
+          return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">⚠️ Exception</Badge>;
+        case 'PROCESSING':
+          return (
+            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+              📦 Processing
+            </Badge>
+          );
+        default:
+          return <span className="text-muted-foreground text-sm">—</span>;
+      }
+    },
+  },
+  {
+    accessorKey: 'shippingCarrier',
+    header: 'Tracking',
+    cell: ({ row }) => {
+      const carrier = row.original.shippingCarrier;
+      const trackingNumber = row.original.trackingNumber;
+
+      if (!carrier || !trackingNumber) {
+        return <span className="text-muted-foreground text-sm">—</span>;
+      }
+
+      return (
+        <div className="text-sm">
+          <div className="font-medium">{carrier.toUpperCase()}</div>
+          <div className="text-muted-foreground font-mono text-xs">{trackingNumber}</div>
+        </div>
       );
     },
   },
