@@ -1,4 +1,4 @@
-import { auth0 } from './auth0';
+import { getAuth0Client } from './auth0';
 import { getManagementClient } from './auth0-management';
 
 /**
@@ -60,6 +60,8 @@ export async function isAdmin(userId: string): Promise<boolean> {
  */
 export async function isCurrentUserAdmin(): Promise<boolean> {
   try {
+    // Use the dynamically configured Auth0 client so session reads match how cookies were issued.
+    const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
     if (!session?.user?.sub) {
       return false;
