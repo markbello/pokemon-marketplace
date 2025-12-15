@@ -85,7 +85,8 @@ export function getAuth0ManagementCredentials(): {
 
 /**
  * Gets Auth0 SDK credentials for the current environment.
- * These are used by the @auth0/nextjs-auth0 SDK.
+ * These are used by the @auth0/nextjs-auth0 SDK for user authentication.
+ * Note: These are different from management API credentials - use regular Auth0 application credentials.
  */
 export function getAuth0SdkCredentials(): {
   issuerBaseUrl: string;
@@ -96,8 +97,9 @@ export function getAuth0SdkCredentials(): {
   const domain = process.env.AUTH0_DOMAIN!;
   return {
     issuerBaseUrl: `https://${domain}`,
-    clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID!,
-    clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET!,
+    // Use regular Auth0 application credentials (not management API)
+    clientId: process.env.AUTH0_CLIENT_ID!,
+    clientSecret: process.env.AUTH0_CLIENT_SECRET!,
     secret: process.env.AUTH0_SECRET!,
   };
 }
