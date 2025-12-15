@@ -201,3 +201,17 @@ model Listing {
   @@index([status, createdAt])
 }
 
+// PM-65: Invitation codes for controlled launch
+model InvitationCode {
+  id         String    @id @default(cuid())
+  code       String    @unique // Pokemon-themed code (e.g., "CHARIZARD-A1B2")
+  createdBy  String?   // Admin who created the code
+  usedBy     String?   // Auth0 user ID who redeemed it
+  usedAt     DateTime? // When the code was redeemed
+  createdAt  DateTime  @default(now())
+
+  @@index([code])
+  @@index([usedBy])
+  @@index([usedAt])
+}
+

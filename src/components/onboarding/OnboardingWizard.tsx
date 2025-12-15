@@ -8,7 +8,11 @@ import { ProgressIndicator } from './ProgressIndicator';
 import { BasicProfileStep } from './BasicProfileStep';
 import { PreferencesStep } from './PreferencesStep';
 import { WelcomeStep } from './WelcomeStep';
-import type { BasicProfileFormData, PreferencesFormData, OnboardingFormData } from '@/lib/validations';
+import type {
+  BasicProfileFormData,
+  PreferencesFormData,
+  OnboardingFormData,
+} from '@/lib/validations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 
@@ -23,6 +27,60 @@ export function OnboardingWizard() {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<OnboardingFormData>>({});
 
+  // PM-65: Redeem invitation code on first load
+  useEffect(() => {
+    const redeemInvitationCode = async () => {
+      if (!userLoading && user) {
+        // Check if invitation code is in sessionStorage
+        const invitationCode = sessionStorage.getItem('invitation_code');
+        if (invitationCode) {
+          console.log('[PM-65] Found invitation code in sessionStorage:', invitationCode);
+          try {
+            // Check if already redeemed
+            console.log('[PM-65] Checking redemption status...');
+            const statusResponse = await fetch('/api/invitation-codes/check-status');
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              console.log('[PM-65] Redemption status:', statusData);
+
+              // Only redeem if not already redeemed
+              if (!statusData.hasRedeemed) {
+                console.log('[PM-65] Attempting to redeem code...');
+                const redeemResponse = await fetch('/api/invitation-codes/redeem', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ code: invitationCode }),
+                });
+
+                if (redeemResponse.ok) {
+                  const redeemData = await redeemResponse.json();
+                  console.log('[PM-65] Code redeemed successfully:', redeemData);
+                } else {
+                  const errorData = await redeemResponse.json();
+                  console.error('[PM-65] Failed to redeem code:', errorData);
+                }
+              } else {
+                console.log('[PM-65] Code already redeemed, skipping');
+              }
+            } else {
+              console.error('[PM-65] Failed to check status:', statusResponse.status);
+            }
+          } catch (error) {
+            console.error('[PM-65] Error redeeming invitation code:', error);
+          } finally {
+            // Clear the code from sessionStorage
+            console.log('[PM-65] Clearing invitation code from sessionStorage');
+            sessionStorage.removeItem('invitation_code');
+          }
+        } else {
+          console.log('[PM-65] No invitation code found in sessionStorage');
+        }
+      }
+    };
+
+    redeemInvitationCode();
+  }, [user, userLoading]);
+
   // Load existing user data from Management API (more reliable than session)
   useEffect(() => {
     const loadUserData = async () => {
@@ -33,7 +91,7 @@ export function OnboardingWizard() {
           if (response.ok) {
             const data = await response.json();
             const metadata = data.user?.user_metadata || {};
-            
+
             // Only set form data if we have actual metadata fields
             if (metadata.firstName || metadata.lastName || metadata.displayName) {
               setFormData({
@@ -122,9 +180,7 @@ export function OnboardingWizard() {
       window.location.assign(returnTo);
     } catch (error) {
       setError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to complete onboarding. Please try again.',
+        error instanceof Error ? error.message : 'Failed to complete onboarding. Please try again.',
       );
     }
   };
@@ -176,7 +232,7 @@ export function OnboardingWizard() {
   if (userLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -245,4 +301,3 @@ export function OnboardingWizard() {
     </div>
   );
 }
-

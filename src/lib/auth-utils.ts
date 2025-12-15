@@ -38,8 +38,10 @@ export function shouldBypassProfileCheck(pathname: string): boolean {
   const bypassRoutes = [
     '/api/auth', // Auth routes (login, logout, callback)
     '/api/user', // User API routes
+    '/api/invitation-codes', // Invitation code API routes
     '/onboarding', // Onboarding page itself
     '/profile', // Profile page (users should be able to view their profile)
+    '/signup', // Signup page (PM-65)
     '/_next', // Next.js internal routes
     '/favicon.ico',
     '/sitemap.xml',

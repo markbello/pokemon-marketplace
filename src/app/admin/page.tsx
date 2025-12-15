@@ -104,9 +104,9 @@ export default function AdminPage() {
   if (userLoading || isLoading) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <Loader2 className="text-muted-foreground mx-auto mb-4 h-8 w-8 animate-spin" />
             <p className="text-muted-foreground">Loading admin dashboard...</p>
           </div>
         </div>
@@ -119,9 +119,7 @@ export default function AdminPage() {
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please log in to access the admin dashboard.
-          </AlertDescription>
+          <AlertDescription>Please log in to access the admin dashboard.</AlertDescription>
         </Alert>
       </div>
     );
@@ -130,11 +128,11 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="max-w-md w-full">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Card className="w-full max-w-md">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+              <div className="bg-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                <AlertCircle className="text-muted-foreground h-8 w-8" />
               </div>
               <CardTitle className="text-2xl">Access Denied</CardTitle>
               <CardDescription className="mt-2">
@@ -143,11 +141,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="pt-4">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => router.push('/')}
-                >
+                <Button variant="outline" className="w-full" onClick={() => router.push('/')}>
                   Go to Home
                 </Button>
               </div>
@@ -162,9 +156,24 @@ export default function AdminPage() {
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+          <h1 className="mb-2 text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage seller accounts and verification status</p>
         </div>
+
+        {/* Quick Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Links</CardTitle>
+            <CardDescription>Navigate to admin sections</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => router.push('/admin/invitation-codes')}>
+                Invitation Codes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -175,12 +184,14 @@ export default function AdminPage() {
                   View all seller accounts and their verification status
                 </CardDescription>
               </div>
-              <Badge variant="outline">{sellers.length} seller{sellers.length !== 1 ? 's' : ''}</Badge>
+              <Badge variant="outline">
+                {sellers.length} seller{sellers.length !== 1 ? 's' : ''}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
             {sellers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 <p>No seller accounts found.</p>
               </div>
             ) : (
@@ -217,7 +228,10 @@ export default function AdminPage() {
                                 Verified
                               </Badge>
                             ) : detailsSubmitted ? (
-                              <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                              <Badge
+                                variant="outline"
+                                className="border-yellow-500 text-yellow-600"
+                              >
                                 <Clock className="mr-1 h-3 w-3" />
                                 Pending
                               </Badge>
@@ -229,24 +243,30 @@ export default function AdminPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm space-y-1">
+                            <div className="space-y-1 text-sm">
                               <div>
                                 Charges:{' '}
-                                <span className={status?.chargesEnabled ? 'text-green-600' : 'text-yellow-600'}>
+                                <span
+                                  className={
+                                    status?.chargesEnabled ? 'text-green-600' : 'text-yellow-600'
+                                  }
+                                >
                                   {status?.chargesEnabled ? 'Yes' : 'No'}
                                 </span>
                               </div>
                               <div>
                                 Payouts:{' '}
-                                <span className={status?.payoutsEnabled ? 'text-green-600' : 'text-yellow-600'}>
+                                <span
+                                  className={
+                                    status?.payoutsEnabled ? 'text-green-600' : 'text-yellow-600'
+                                  }
+                                >
                                   {status?.payoutsEnabled ? 'Yes' : 'No'}
                                 </span>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            {new Date(seller.createdAt).toLocaleDateString()}
-                          </TableCell>
+                          <TableCell>{new Date(seller.createdAt).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <Button
                               variant="outline"
@@ -270,4 +290,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
