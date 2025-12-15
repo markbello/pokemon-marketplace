@@ -57,33 +57,18 @@ export async function getAppBaseUrl(): Promise<string> {
   }
 }
 
-// Helper function to get required env vars
-function getRequiredEnv(name: string, label?: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required env var: ${name}${label ? ` (${label})` : ''}`);
-  }
-  return value;
-}
-
-// Helper function to get optional env vars
-function getOptionalEnv(name: string): string | undefined {
-  return process.env[name];
-}
-
 // === ENVIRONMENT VARIABLE GETTERS ===
 
 export function getStripeSecretKey(): string {
-  return getRequiredEnv('STRIPE_SECRET_KEY', 'Stripe secret key');
+  return process.env.STRIPE_SECRET_KEY!;
 }
 
 export function getStripePublishableKey(): string {
-  return getRequiredEnv('STRIPE_PUBLISHABLE_KEY', 'Stripe publishable key');
+  return process.env.STRIPE_PUBLISHABLE_KEY!;
 }
 
 export function getStripeWebhookSecret(): string | undefined {
-  // optional in dev (signature verification skipped)
-  return getOptionalEnv('STRIPE_WEBHOOK_SECRET');
+  return process.env.STRIPE_WEBHOOK_SECRET;
 }
 
 export function getAuth0ManagementCredentials(): {
@@ -91,14 +76,11 @@ export function getAuth0ManagementCredentials(): {
   clientId: string;
   clientSecret: string;
 } {
-  const domain = getRequiredEnv('AUTH0_DOMAIN', 'Auth0 domain');
-  const clientId = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_ID', 'Auth0 management client id');
-  const clientSecret = getRequiredEnv(
-    'AUTH0_MANAGEMENT_CLIENT_SECRET',
-    'Auth0 management client secret',
-  );
-
-  return { domain, clientId, clientSecret };
+  return {
+    domain: process.env.AUTH0_DOMAIN!,
+    clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID!,
+    clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET!,
+  };
 }
 
 /**
@@ -111,27 +93,23 @@ export function getAuth0SdkCredentials(): {
   clientSecret: string;
   secret: string;
 } {
-  const domain = getRequiredEnv('AUTH0_DOMAIN', 'Auth0 domain');
-  const issuerBaseUrl = `https://${domain}`;
-
-  const clientId = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_ID', 'Auth0 client ID');
-  const clientSecret = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_SECRET', 'Auth0 client secret');
-
-  // AUTH0_SECRET is used for session encryption
-  const secret = getRequiredEnv('AUTH0_SECRET', 'Auth0 secret');
-
-  return { issuerBaseUrl, clientId, clientSecret, secret };
+  const domain = process.env.AUTH0_DOMAIN!;
+  return {
+    issuerBaseUrl: `https://${domain}`,
+    clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID!,
+    clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET!,
+    secret: process.env.AUTH0_SECRET!,
+  };
 }
 
 export function getDatabaseUrl(): string {
-  return getRequiredEnv('DATABASE_URL', 'Database URL');
+  return process.env.DATABASE_URL!;
 }
 
 export function getShippoToken(): string {
-  return getRequiredEnv('SHIPPO_TOKEN', 'Shippo API token');
+  return process.env.SHIPPO_TOKEN!;
 }
 
 export function getShippoWebhookSecret(): string | undefined {
-  // Optional - used for webhook signature verification
-  return getOptionalEnv('SHIPPO_WEBHOOK_SECRET');
+  return process.env.SHIPPO_WEBHOOK_SECRET;
 }
