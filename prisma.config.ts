@@ -1,17 +1,13 @@
 import { defineConfig } from 'prisma/config';
 
-// For Prisma CLI commands, use environment-specific variables
+// With dual Vercel projects (PM-67), each deployment has its own DATABASE_URL
+// No suffix logic needed anymore
 function getDatabaseUrl(): string {
-  const vercelUrl = process.env.VERCEL_URL;
-  const isProd = vercelUrl?.includes('kado.io') || vercelUrl === 'kado.io';
-  const envSuffix = isProd ? 'PROD' : 'STAGING';
-
-  const dbUrl = process.env[`DATABASE_URL_${envSuffix}`];
-  if (dbUrl) {
-    return dbUrl;
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    throw new Error('Missing required environment variable: DATABASE_URL');
   }
-
-  throw new Error(`Missing DATABASE_URL_${envSuffix}`);
+  return dbUrl;
 }
 
 export default defineConfig({

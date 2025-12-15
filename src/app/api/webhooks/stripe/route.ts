@@ -216,7 +216,7 @@ export async function POST(request: Request) {
 
   try {
     // Verify webhook signature
-    const webhookSecret = await getStripeWebhookSecret();
+    const webhookSecret = getStripeWebhookSecret();
 
     if (!webhookSecret) {
       console.warn(

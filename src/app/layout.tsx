@@ -3,8 +3,6 @@ import { Nunito } from 'next/font/google';
 import { Auth0Provider } from '@auth0/nextjs-auth0';
 import Navbar from '@/components/layout/Navbar';
 import { Toaster } from '@/components/ui/sonner';
-import { EnvironmentProvider } from '@/components/providers/EnvironmentProvider';
-import { detectRuntimeEnvironment, getStripePublishableKey } from '@/lib/env';
 import './globals.css';
 
 const nunito = Nunito({
@@ -22,29 +20,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Detect environment server-side using actual host header
-  const environment = await detectRuntimeEnvironment();
-  const stripePublishableKey = await getStripePublishableKey();
-
   return (
     <html lang="en">
       <body className={`${nunito.variable} antialiased`}>
         <Auth0Provider>
-          <EnvironmentProvider
-            environment={environment}
-            stripePublishableKey={stripePublishableKey}
-          >
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-            </div>
-            <Toaster />
-          </EnvironmentProvider>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </div>
+          <Toaster />
         </Auth0Provider>
       </body>
     </html>

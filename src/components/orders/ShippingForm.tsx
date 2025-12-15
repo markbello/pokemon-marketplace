@@ -11,11 +11,12 @@ import { SUPPORTED_CARRIERS, TEST_SCENARIOS } from '@/lib/tracking-constants';
 interface ShippingFormProps {
   orderId: string;
   orderNumber: string;
-  isStaging: boolean; // Determines if we show test scenarios or real inputs
   onShipped?: () => void;
 }
 
-export function ShippingForm({ orderId, orderNumber, isStaging, onShipped }: ShippingFormProps) {
+export function ShippingForm({ orderId, orderNumber, onShipped }: ShippingFormProps) {
+  // Check if we're in staging/development (allows test tracking numbers)
+  const isStaging = process.env.RUNTIME_ENV !== 'production';
   const [carrier, setCarrier] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

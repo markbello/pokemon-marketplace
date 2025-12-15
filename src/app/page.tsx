@@ -7,10 +7,8 @@ import Link from 'next/link';
 import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
 import { TestEmailSender } from '@/components/home/TestEmailSender';
-import { detectRuntimeEnvironment } from '@/lib/env';
 
 export default async function Home() {
-  const runtime = await detectRuntimeEnvironment();
   const auth0 = await getAuth0Client();
   const session = await auth0.getSession();
   const isAuthenticated = !!session?.user;
@@ -36,16 +34,8 @@ export default async function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <h1 className="text-kado-blue text-4xl font-bold">Welcome to kado.io</h1>
-          <div
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              runtime === 'prod' ? 'bg-green-100 text-green-900' : 'bg-amber-100 text-amber-900'
-            }`}
-            title={`VERCEL_URL: ${process.env.VERCEL_URL || 'local'}`}
-          >
-            {runtime === 'prod' ? 'PROD' : 'STAGING'}
-          </div>
         </div>
         <p className="text-muted-foreground mb-8 text-lg">
           Buy and sell trading cards with ease. Browse our marketplace or start selling today!
@@ -124,13 +114,13 @@ export default async function Home() {
             </p>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {listings.map((listing) => (
+              {listings.map((listing: (typeof listings)[number]) => (
                 <Card key={listing.id} className="overflow-hidden rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={listing.imageUrl || '/kado-placeholder.jpg'}
                     alt={listing.displayTitle}
-                    className="bg-muted/30 aspect-[4/3] w-full object-contain"
+                    className="bg-muted/30 aspect-4/3 w-full object-contain"
                   />
                   <CardHeader className="space-y-1 pb-2">
                     <CardTitle className="line-clamp-2 text-base">{listing.displayTitle}</CardTitle>

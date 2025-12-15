@@ -1,6 +1,7 @@
 import { Shippo } from 'shippo';
-import { getShippoToken, detectRuntimeEnvironment } from './env';
+import { getShippoToken } from './env';
 import { prisma } from './prisma';
+import type { Prisma } from '@prisma/client';
 import {
   TEST_TRACKING_NUMBERS,
   SUPPORTED_CARRIERS as CARRIERS,
@@ -16,9 +17,9 @@ export const TEST_SCENARIOS = SCENARIOS;
 export class TrackingService {
   private shippo: Shippo | null = null;
 
-  private async getShippoClient(): Promise<Shippo> {
+  private getShippoClient(): Shippo {
     if (!this.shippo) {
-      const token = await getShippoToken();
+      const token = getShippoToken();
       this.shippo = new Shippo({ apiKeyHeader: token });
     }
     return this.shippo;
@@ -26,17 +27,16 @@ export class TrackingService {
 
   /**
    * Resolves tracking number for environment.
-   * In staging: maps test scenarios to Shippo test tracking numbers
-   * In prod: uses actual tracking numbers
+   * In staging/development: maps test scenarios to Shippo test tracking numbers
+   * In production: uses actual tracking numbers
    */
-  private async resolveTrackingNumber(input: string): Promise<string> {
-    const env = await detectRuntimeEnvironment();
-
-    if (env === 'prod') {
-      return input; // Use actual tracking number in production
+  private resolveTrackingNumber(input: string): string {
+    // In production, always use actual tracking numbers
+    if (process.env.RUNTIME_ENV === 'production') {
+      return input;
     }
 
-    // In staging, map test scenarios to Shippo test numbers
+    // In staging/development, map test scenarios to Shippo test numbers
     if (input in TEST_TRACKING_NUMBERS) {
       return TEST_TRACKING_NUMBERS[input as TestScenario];
     }
@@ -49,9 +49,8 @@ export class TrackingService {
    * Creates Shippo tracking and updates order status to SHIPPED.
    */
   async startTracking(orderId: string, carrier: string, trackingNumber: string) {
-    const shippo = await this.getShippoClient();
-    const env = await detectRuntimeEnvironment();
-    const actualTrackingNumber = await this.resolveTrackingNumber(trackingNumber);
+    const shippo = this.getShippoClient();
+    const actualTrackingNumber = this.resolveTrackingNumber(trackingNumber);
 
     // For test tracking numbers, Shippo requires carrier to be "shippo"
     const isTestTracking = trackingNumber in TEST_TRACKING_NUMBERS;
@@ -62,9 +61,8 @@ export class TrackingService {
       carrier: shippoCarrier,
       trackingNumber: actualTrackingNumber,
       metadata: JSON.stringify({
-        environment: env,
         orderId: orderId,
-        isTest: env !== 'prod',
+        isTest: process.env.RUNTIME_ENV !== 'production',
         originalTrackingNumber: trackingNumber,
         originalCarrier: carrier,
       }),
@@ -72,7 +70,7 @@ export class TrackingService {
 
     // Update order in database - store the user-selected carrier, not "shippo"
     const shippedTime = new Date();
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updatedOrder = await tx.order.update({
         where: { id: orderId },
         data: {
@@ -102,7 +100,7 @@ export class TrackingService {
     });
 
     console.log(
-      `[${env}] Order ${orderId.slice(-8)} marked as shipped - Carrier: ${carrier}, Tracking: ${actualTrackingNumber} (Shippo carrier: ${shippoCarrier})`,
+      `Order ${orderId.slice(-8)} marked as shipped - Carrier: ${carrier}, Tracking: ${actualTrackingNumber} (Shippo carrier: ${shippoCarrier})`,
     );
 
     return { tracking, order };
@@ -112,7 +110,7 @@ export class TrackingService {
    * Gets current tracking status from Shippo.
    */
   async getTrackingStatus(carrier: string, trackingNumber: string) {
-    const shippo = await this.getShippoClient();
+    const shippo = this.getShippoClient();
     return await shippo.trackingStatus.get(trackingNumber, carrier);
   }
 
@@ -121,7 +119,7 @@ export class TrackingService {
    * Should be called once during setup.
    */
   async registerWebhook(webhookUrl: string) {
-    const shippo = await this.getShippoClient();
+    const shippo = this.getShippoClient();
 
     // Check if webhook already exists
     const existingWebhooks = await shippo.webhooks.listWebhooks();
