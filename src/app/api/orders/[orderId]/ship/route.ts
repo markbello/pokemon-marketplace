@@ -3,7 +3,6 @@ import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { trackingService } from '@/lib/tracking-service';
 import { sendOrderShippedEmail } from '@/lib/send-email';
-import { detectRuntimeEnvironment } from '@/lib/env';
 import { TEST_TRACKING_NUMBERS } from '@/lib/tracking-constants';
 
 /**
@@ -37,12 +36,12 @@ export async function POST(
       );
     }
 
-    // Detect environment and validate test tracking numbers
-    const environment = await detectRuntimeEnvironment();
+    // Validate test tracking numbers
+    // With dual Vercel projects (PM-67), test tracking should only be used in staging/development
     const isTestTracking = Object.values(TEST_TRACKING_NUMBERS).includes(trackingNumber as any);
 
     // Block test tracking numbers in production
-    if (environment === 'prod' && isTestTracking) {
+    if (process.env.RUNTIME_ENV === 'production' && isTestTracking) {
       return NextResponse.json(
         {
           error: 'Test tracking numbers are not allowed in production',

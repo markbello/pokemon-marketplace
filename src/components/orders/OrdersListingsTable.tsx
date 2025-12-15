@@ -38,7 +38,6 @@ export interface OrderListingItem {
 interface OrdersListingsTableProps {
   items: OrderListingItem[];
   mode: 'buyer' | 'seller';
-  isStaging?: boolean;
   onEditListing?: (item: OrderListingItem) => void;
   onShippingSuccess?: () => void;
 }
@@ -56,7 +55,6 @@ function getTrackingUrl(carrier: string, trackingNumber: string): string {
 export function OrdersListingsTable({
   items,
   mode,
-  isStaging = false,
   onEditListing,
   onShippingSuccess,
 }: OrdersListingsTableProps) {
@@ -354,7 +352,6 @@ export function OrdersListingsTable({
         <ShippingModal
           orderId={selectedOrderForShipping.orderId}
           orderNumber={selectedOrderForShipping.orderNumber}
-          isStaging={isStaging}
           open={shippingModalOpen}
           onOpenChange={setShippingModalOpen}
           onSuccess={handleShippingSuccess}

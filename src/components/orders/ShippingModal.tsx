@@ -17,7 +17,6 @@ import { SUPPORTED_CARRIERS, TEST_SCENARIOS } from '@/lib/tracking-constants';
 interface ShippingModalProps {
   orderId: string;
   orderNumber: string;
-  isStaging: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -26,11 +25,12 @@ interface ShippingModalProps {
 export function ShippingModal({
   orderId,
   orderNumber,
-  isStaging,
   open,
   onOpenChange,
   onSuccess,
 }: ShippingModalProps) {
+  // Check if we're in staging/development (allows test tracking numbers)
+  const isStaging = process.env.RUNTIME_ENV !== 'production';
   const [carrier, setCarrier] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -38,7 +38,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { isClientStaging } from '@/lib/client-env';
 
 interface SellerStatus {
   hasAccount: boolean;
@@ -618,7 +617,6 @@ function SellerDashboardContent() {
                 orderFulfillmentStatus: listing.orderFulfillmentStatus,
               }))}
               mode="seller"
-              isStaging={isClientStaging()}
               onEditListing={beginEditListing}
               onShippingSuccess={fetchListings}
             />

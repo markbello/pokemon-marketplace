@@ -20,7 +20,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { detectRuntimeEnvironment } from '@/lib/env';
 import Image from 'next/image';
 
 function getStatusBadge(status: string) {
@@ -112,10 +111,6 @@ export default async function OrderDetailPage({
   const isSeller = order.sellerId === userId;
   const isBuyer = order.buyerId === userId;
 
-  // Detect environment for shipping form
-  const environment = await detectRuntimeEnvironment();
-  const isStaging = environment === 'staging';
-
   // Fetch addresses from Stripe (privacy-by-design: addresses not stored locally)
   const addresses = await getOrderAddresses(order.id);
 
@@ -164,7 +159,6 @@ export default async function OrderDetailPage({
         <ShippingPromptBanner
           orderId={order.id}
           orderNumber={order.id.slice(-8).toUpperCase()}
-          isStaging={isStaging}
           hasShippingAddress={!!addresses?.shipping}
         />
       )}

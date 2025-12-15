@@ -7,7 +7,8 @@ import {
   sendOrderDeliveredEmail,
   sendDeliveryExceptionEmail,
 } from '@/lib/send-email';
-import { getShippoWebhookSecret, detectRuntimeEnvironment } from '@/lib/env';
+import { getShippoWebhookSecret } from '@/lib/env';
+import type { Prisma } from '@prisma/client';
 
 /**
  * Shippo Webhook Handler (PM-64)
@@ -35,8 +36,8 @@ type ShippoWebhookEvent = {
  * Verify Shippo webhook signature
  * TODO: Implement actual signature verification when Shippo provides it
  */
-async function verifySignature(payload: string, signature: string | null): Promise<boolean> {
-  const webhookSecret = await getShippoWebhookSecret();
+function verifySignature(payload: string, signature: string | null): boolean {
+  const webhookSecret = getShippoWebhookSecret();
 
   if (!webhookSecret) {
     console.warn('[Shippo Webhook] No webhook secret configured - skipping verification');
@@ -58,16 +59,15 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-shippo-signature');
 
     // Verify signature
-    const isValid = await verifySignature(body, signature);
+    const isValid = verifySignature(body, signature);
     if (!isValid) {
       console.error('[Shippo Webhook] Invalid signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const payload: ShippoWebhookEvent = JSON.parse(body);
-    const env = await detectRuntimeEnvironment();
 
-    console.log(`[Shippo Webhook] [${env}] Received event:`, payload.event);
+    console.log('[Shippo Webhook] Received event:', payload.event);
 
     // Handle track_updated events
     if (payload.event === 'track_updated') {
@@ -84,8 +84,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Skip test shipments in production
-      if (env === 'prod' && (meta.isTest || payload.test)) {
-        console.log(`[Shippo Webhook] [${env}] Skipping test shipment: ${tracking_number}`);
+      // Note: With dual Vercel projects (PM-67), test shipments should only go to staging
+      if (process.env.RUNTIME_ENV === 'production' && (meta.isTest || payload.test)) {
+        console.log('[Shippo Webhook] Skipping test shipment in production:', tracking_number);
         return NextResponse.json({
           received: true,
           skipped: 'test shipment in production',
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
         updateData.deliveredAt = timestamp;
       }
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.order.update({
           where: { id: order.id },
           data: updateData,
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(
-        `[Shippo Webhook] [${env}] Order ${order.id.slice(-8)} updated: ${currentStatus} → ${fulfillmentStatus}`,
+        `[Shippo Webhook] Order ${order.id.slice(-8)} updated: ${currentStatus} → ${fulfillmentStatus}`,
       );
 
       // Send appropriate emails

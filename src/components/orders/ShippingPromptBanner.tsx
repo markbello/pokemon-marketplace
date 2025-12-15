@@ -9,14 +9,12 @@ import { ShippingModal } from './ShippingModal';
 interface ShippingPromptBannerProps {
   orderId: string;
   orderNumber: string;
-  isStaging: boolean;
   hasShippingAddress: boolean;
 }
 
 export function ShippingPromptBanner({
   orderId,
   orderNumber,
-  isStaging,
   hasShippingAddress,
 }: ShippingPromptBannerProps) {
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
@@ -57,7 +55,6 @@ export function ShippingPromptBanner({
       <ShippingModal
         orderId={orderId}
         orderNumber={orderNumber}
-        isStaging={isStaging}
         open={shippingModalOpen}
         onOpenChange={setShippingModalOpen}
         onSuccess={handleShippingSuccess}
