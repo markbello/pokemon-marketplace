@@ -47,9 +47,7 @@ export default function PreferencesPage() {
       displayName: metadata?.displayName || '',
       phone: metadata?.phone || '',
       emailNotifications: metadata?.preferences?.emailNotifications ?? true,
-      smsNotifications: metadata?.preferences?.smsNotifications ?? false,
       profileVisibility: metadata?.preferences?.profileVisibility || 'public',
-      preferredCommunication: metadata?.preferences?.preferredCommunication || 'email',
     },
     mode: 'onBlur',
     reValidateMode: 'onBlur',
@@ -86,9 +84,7 @@ export default function PreferencesPage() {
         displayName: metadata?.displayName || '',
         phone: metadata?.phone || '',
         emailNotifications: metadata?.preferences?.emailNotifications ?? true,
-        smsNotifications: metadata?.preferences?.smsNotifications ?? false,
         profileVisibility: metadata?.preferences?.profileVisibility || 'public',
-        preferredCommunication: metadata?.preferences?.preferredCommunication || 'email',
       });
     }
   }, [displayUser, form]);
@@ -137,20 +133,16 @@ export default function PreferencesPage() {
       }
 
       // Update form to reflect the change
-      if (field === 'emailNotifications' || field === 'smsNotifications') {
+      if (field === 'emailNotifications') {
         form.setValue(field, value as boolean);
       } else if (field === 'profileVisibility') {
         form.setValue(field, value as 'public' | 'private');
-      } else if (field === 'preferredCommunication') {
-        form.setValue(field, value as 'email' | 'sms' | 'both');
       }
 
       // Show success toast with a friendly message
       const fieldLabels: Record<keyof PreferencesFormData, string> = {
         emailNotifications: 'Email notifications',
-        smsNotifications: 'SMS notifications',
         profileVisibility: 'Profile visibility',
-        preferredCommunication: 'Communication preference',
       };
       const fieldLabel = fieldLabels[field] || field;
       toast.success(`${fieldLabel} updated`);
@@ -161,12 +153,10 @@ export default function PreferencesPage() {
       // Revert the form value on error
       const originalValue = metadata?.preferences?.[field];
       if (originalValue !== undefined) {
-        if (field === 'emailNotifications' || field === 'smsNotifications') {
+        if (field === 'emailNotifications') {
           form.setValue(field, originalValue as boolean);
         } else if (field === 'profileVisibility') {
           form.setValue(field, originalValue as 'public' | 'private');
-        } else if (field === 'preferredCommunication') {
-          form.setValue(field, originalValue as 'email' | 'sms' | 'both');
         }
       }
     }
@@ -177,14 +167,14 @@ export default function PreferencesPage() {
       <AccountLayout>
         <div className="space-y-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Preferences</h1>
+            <h1 className="mb-2 text-3xl font-bold">Preferences</h1>
             <p className="text-muted-foreground">Your notification and privacy settings</p>
           </div>
           {/* Reserve space for content card to prevent layout shift */}
           <Card>
-            <CardContent className="flex items-center justify-center min-h-[400px]">
+            <CardContent className="flex min-h-[400px] items-center justify-center">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+                <Loader2 className="text-muted-foreground mx-auto mb-4 h-8 w-8 animate-spin" />
                 <p className="text-muted-foreground">Loading...</p>
               </div>
             </CardContent>
@@ -199,7 +189,7 @@ export default function PreferencesPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Preferences</h1>
+          <h1 className="mb-2 text-3xl font-bold">Preferences</h1>
           <p className="text-muted-foreground">Your notification and privacy settings</p>
         </div>
 
@@ -246,30 +236,6 @@ export default function PreferencesPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="smsNotifications"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">SMS Notifications</FormLabel>
-                            <FormDescription>
-                              Get text alerts for order updates and security notifications
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={(checked) => {
-                                field.onChange(checked);
-                                handlePreferenceChange('smsNotifications', checked);
-                              }}
-                              disabled={!form.watch('phone')}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </div>
 
@@ -308,52 +274,6 @@ export default function PreferencesPage() {
                               <FormLabel className="font-normal">
                                 Private - Only you can see your profile
                               </FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Separator />
-
-                {/* Communication Preference */}
-                <div>
-                  <h3 className="mb-4 text-sm font-semibold">Communication Preference</h3>
-                  <FormField
-                    control={form.control}
-                    name="preferredCommunication"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Preferred Communication Method</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              handlePreferenceChange('preferredCommunication', value);
-                            }}
-                            value={field.value}
-                            className="flex flex-col space-y-1"
-                          >
-                            <FormItem className="flex items-center space-y-0 space-x-3">
-                              <FormControl>
-                                <RadioGroupItem value="email" />
-                              </FormControl>
-                              <FormLabel className="font-normal">Email</FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-y-0 space-x-3">
-                              <FormControl>
-                                <RadioGroupItem value="sms" />
-                              </FormControl>
-                              <FormLabel className="font-normal">SMS</FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-y-0 space-x-3">
-                              <FormControl>
-                                <RadioGroupItem value="both" />
-                              </FormControl>
-                              <FormLabel className="font-normal">Both Email & SMS</FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </FormControl>

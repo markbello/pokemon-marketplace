@@ -1,12 +1,7 @@
 import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Store, ArrowRight, ShoppingBag, Mail } from 'lucide-react';
-import Link from 'next/link';
-import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
-import { TestEmailSender } from '@/components/home/TestEmailSender';
 
 export default async function Home() {
   const auth0 = await getAuth0Client();
@@ -34,75 +29,12 @@ export default async function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-kado-blue text-4xl font-bold">Welcome to kado.io</h1>
-        </div>
-        <p className="text-muted-foreground mb-8 text-lg">
-          Buy and sell trading cards with ease. Browse our marketplace or start selling today!
-        </p>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5" />
-                <CardTitle>Test Purchasing</CardTitle>
-              </div>
-              <CardDescription>Test the purchase flow with a $1 test payment.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BrowseCardsButton isAuthenticated={isAuthenticated} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Store className="h-5 w-5" />
-                <CardTitle>Start Selling</CardTitle>
-              </div>
-              <CardDescription>List your cards and reach buyers worldwide.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isAuthenticated ? (
-                <Button asChild className="w-full">
-                  <Link href="/account/seller">
-                    Go to Seller Dashboard
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : (
-                <Button asChild className="w-full">
-                  <Link href="/api/auth/login?returnTo=/account/seller">
-                    Sign In to Start Selling
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                <CardTitle>Send Test Email</CardTitle>
-              </div>
-              <CardDescription>Dev-only helper to trigger the test email endpoint.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TestEmailSender />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-10 space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Listings you can buy</h2>
+            <h2 className="text-xl font-semibold">All listings</h2>
             {listings.length > 0 && (
               <p className="text-muted-foreground text-sm">
-                Showing {listings.length} listing{listings.length === 1 ? '' : 's'} available to
-                you.
+                Showing {listings.length} listing{listings.length === 1 ? '' : 's'}
               </p>
             )}
           </div>
