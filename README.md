@@ -21,12 +21,32 @@ A modern, secure marketplace for buying and selling trading cards built with Nex
 - **Payments**: Stripe Connect for marketplace transactions
 - **Hosting**: Vercel
 
+## ⚡ Quick Start
+
+**TL;DR** - If you've already set up your environment:
+
+```bash
+npm run dev:all
+```
+
+This single command will:
+- ✅ Check and start Docker database
+- ✅ Start Stripe webhook listener
+- ✅ Start Next.js dev server
+- ✅ Handle graceful shutdown
+
+**First time?** See detailed setup instructions below.
+
+---
+
 ## 📱 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
+- **Docker Desktop** (for local database)
+- **Stripe CLI** (for webhook testing): [Install here](https://stripe.com/docs/stripe-cli)
 - **Vercel CLI**: `npm install -g vercel`
 - Access to the kado.io Vercel team (contact team lead)
 - Auth0 account credentials (get from team lead)
@@ -197,13 +217,56 @@ STRIPE_WEBHOOK_SECRET="whsec_[from-stripe-cli-output]"
 
 #### 5. Start Development
 
+**Option A: All-in-One (Recommended)**
+
 ```bash
+npm run dev:all
+```
+
+This command automatically:
+- Checks and starts Docker database if needed
+- Starts Stripe webhook listener (if Stripe CLI is installed)
+- Starts Next.js dev server
+- Handles graceful shutdown of all processes
+
+**Option B: Manual Start**
+
+If you prefer to run services separately:
+
+```bash
+# Terminal 1: Start database
+docker compose up -d db
+
+# Terminal 2: Start Stripe listener
+source .env.local && stripe listen --forward-to localhost:3000/api/webhooks/stripe --api-key "$STRIPE_SECRET_KEY"
+
+# Terminal 3: Start Next.js
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+### Common Startup Issues
+
+**Docker not running**
+```bash
+# Error: Cannot connect to Docker daemon
+# Solution: Start Docker Desktop
+```
+
+**Stripe CLI not installed**
+```bash
+# The dev:all script will continue without Stripe webhook listener
+# Install Stripe CLI: https://stripe.com/docs/stripe-cli
+```
+
+**Port 3000 already in use**
+```bash
+# Solution: Kill the process or use a different port
+lsof -ti:3000 | xargs kill -9
+```
 
 ## 🗄️ Development Commands
 

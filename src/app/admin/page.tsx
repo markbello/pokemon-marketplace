@@ -15,8 +15,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle, ExternalLink, CheckCircle2, Clock } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  ShoppingBag,
+  Mail,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { BrowseCardsButton } from '@/components/home/BrowseCardsButton';
+import { TestEmailSender } from '@/components/home/TestEmailSender';
 
 interface SellerAccount {
   id: string;
@@ -171,6 +181,43 @@ export default function AdminPage() {
               <Button variant="outline" onClick={() => router.push('/admin/invitation-codes')}>
                 Invitation Codes
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dev Tools */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Development Tools</CardTitle>
+            <CardDescription>Testing and development utilities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="border-2">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5" />
+                    <CardTitle>Test Purchasing</CardTitle>
+                  </div>
+                  <CardDescription>Test the purchase flow with a $1 test payment.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BrowseCardsButton isAuthenticated={!!user} />
+                </CardContent>
+              </Card>
+
+              <Card className="border-2">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    <CardTitle>Send Test Email</CardTitle>
+                  </div>
+                  <CardDescription>Trigger the test email endpoint.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TestEmailSender />
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>

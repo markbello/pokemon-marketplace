@@ -43,9 +43,7 @@ export type BasicProfileFormData = z.infer<typeof basicProfileSchema>;
  */
 export const preferencesSchema = z.object({
   emailNotifications: z.boolean(),
-  smsNotifications: z.boolean(),
   profileVisibility: z.enum(['public', 'private']),
-  preferredCommunication: z.enum(['email', 'sms', 'both']),
 });
 
 export type PreferencesFormData = z.infer<typeof preferencesSchema>;
@@ -56,4 +54,3 @@ export type PreferencesFormData = z.infer<typeof preferencesSchema>;
 export const onboardingSchema = basicProfileSchema.merge(preferencesSchema);
 
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;
-
