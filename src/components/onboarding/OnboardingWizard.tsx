@@ -101,9 +101,7 @@ export function OnboardingWizard() {
                 phone: metadata.phone || '',
                 ...(metadata.preferences && {
                   emailNotifications: metadata.preferences.emailNotifications ?? true,
-                  smsNotifications: metadata.preferences.smsNotifications ?? false,
                   profileVisibility: metadata.preferences.profileVisibility || 'public',
-                  preferredCommunication: metadata.preferences.preferredCommunication || 'email',
                 }),
               });
             }
@@ -120,9 +118,7 @@ export function OnboardingWizard() {
                 phone: metadata.phone || '',
                 ...(metadata.preferences && {
                   emailNotifications: metadata.preferences.emailNotifications ?? true,
-                  smsNotifications: metadata.preferences.smsNotifications ?? false,
                   profileVisibility: metadata.preferences.profileVisibility || 'public',
-                  preferredCommunication: metadata.preferences.preferredCommunication || 'email',
                 }),
               });
             }
@@ -198,9 +194,7 @@ export function OnboardingWizard() {
         phone: data.phone,
         preferences: {
           emailNotifications: data.emailNotifications,
-          smsNotifications: data.smsNotifications,
           profileVisibility: data.profileVisibility,
-          preferredCommunication: data.preferredCommunication,
         },
         profileComplete,
       }),
