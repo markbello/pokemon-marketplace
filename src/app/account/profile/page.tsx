@@ -53,9 +53,7 @@ export default function ProfilePage() {
       displayName: metadata?.displayName || '',
       phone: metadata?.phone || '',
       emailNotifications: metadata?.preferences?.emailNotifications ?? true,
-      smsNotifications: metadata?.preferences?.smsNotifications ?? false,
       profileVisibility: metadata?.preferences?.profileVisibility || 'public',
-      preferredCommunication: metadata?.preferences?.preferredCommunication || 'email',
     },
     mode: 'onBlur',
     reValidateMode: 'onBlur',
@@ -92,9 +90,7 @@ export default function ProfilePage() {
         displayName: metadata?.displayName || '',
         phone: metadata?.phone || '',
         emailNotifications: metadata?.preferences?.emailNotifications ?? true,
-        smsNotifications: metadata?.preferences?.smsNotifications ?? false,
         profileVisibility: metadata?.preferences?.profileVisibility || 'public',
-        preferredCommunication: metadata?.preferences?.preferredCommunication || 'email',
       });
     }
   }, [displayUser, form]);
@@ -366,10 +362,7 @@ export default function ProfilePage() {
                         displayName: metadata?.displayName || '',
                         phone: metadata?.phone || '',
                         emailNotifications: metadata?.preferences?.emailNotifications ?? true,
-                        smsNotifications: metadata?.preferences?.smsNotifications ?? false,
                         profileVisibility: metadata?.preferences?.profileVisibility || 'public',
-                        preferredCommunication:
-                          metadata?.preferences?.preferredCommunication || 'email',
                       });
                       setHasBasicChanges(false);
                     }}
