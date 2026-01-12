@@ -89,3 +89,6 @@ android/
 ios/
 .capacitor/
 /src/generated/prisma
+
+# Misc
+pokemon-tcg-data/

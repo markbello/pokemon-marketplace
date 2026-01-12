@@ -127,8 +127,31 @@ DATABASE_URL_STAGING="postgresql://pokemon:pokemon@localhost:5432/pokemon_market
 ```bash
 npm run db:migrate
 npm run db:generate
+```
 
-# (Optional) Seed database with test data
+4. **Load Pokemon TCG Reference Data** (required for sets/cards to display):
+
+The Pokemon TCG reference data (sets and cards) is provided as a database dump for fast setup. Restore it using:
+
+```bash
+pg_restore \
+  -d "postgresql://pokemon:pokemon@localhost:5432/pokemon_marketplace_dev" \
+  --data-only \
+  --no-owner \
+  --no-acl \
+  pokemon-reference-data.dump
+```
+
+This will populate:
+- ~170 Pokemon sets
+- ~19,783 Pokemon cards
+- Generic card records for listings
+
+**Note:** The dump file (`pokemon-reference-data.dump`) is committed to the repository. If you need to update it (e.g., when new sets are released), create a new dump from your seeded local database and commit it.
+
+5. **(Optional) Seed database with test users:**
+
+```bash
 npm run db:seed
 ```
 
@@ -277,9 +300,17 @@ lsof -ti:3000 | xargs kill -9
 - `npm run db:migrate` - Create and apply new migrations to your **local** database (e.g., `npm run db:migrate -- --name pm33-listings`)
 - `npm run db:generate` - Regenerate Prisma client after schema changes
 - `npm run db:studio` - Open Prisma Studio (database GUI) to view/edit data
-- `npm run db:seed` - Seed database with test data
+- `npm run db:seed` - Seed database with test users
 - `npm run db:reset` - Reset database (⚠️ **WARNING**: deletes all data)
 - `npm run db:deploy` - Apply migrations to remote database (staging/production)
+
+**Pokemon TCG Reference Data:**
+- Restore from dump: `pg_restore -d "$DATABASE_URL" --data-only --no-owner --no-acl pokemon-reference-data.dump`
+- The dump file contains all Pokemon sets and cards (~19k cards) and is committed to the repository
+
+**Pokemon TCG Reference Data:**
+- Restore from dump: `pg_restore -d "$DATABASE_URL" --data-only --no-owner --no-acl pokemon-reference-data.dump`
+- The dump file contains all Pokemon sets and cards (~19k cards) and is committed to the repository
 
 ### Next.js
 
@@ -390,7 +421,12 @@ lsof -ti:3000 | xargs kill -9
    ```bash
    npm run db:generate
    npm run db:migrate
-   npm run db:seed  # Optional test data
+   
+   # Load Pokemon TCG reference data (required for sets/cards)
+   pg_restore -d "$DATABASE_URL_STAGING" --data-only --no-owner --no-acl pokemon-reference-data.dump
+   
+   # (Optional) Seed test users
+   npm run db:seed
    ```
 
 6. **Start Development:**

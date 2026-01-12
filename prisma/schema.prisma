@@ -191,6 +191,13 @@ model Listing {
   status           ListingStatus  @default(DRAFT)
   imageUrl         String?
 
+  // Generic card reference (works with any TCG)
+  cardId           String?
+  card             Card?          @relation(fields: [cardId], references: [id])
+  
+  // PSA cert number is specific to the instance being listed
+  psaCertNumber    String?
+
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -199,6 +206,8 @@ model Listing {
 
   @@index([sellerId, status])
   @@index([status, createdAt])
+  @@index([cardId])
+  @@index([psaCertNumber])
 }
 
 // PM-65: Invitation codes for controlled launch
@@ -215,3 +224,158 @@ model InvitationCode {
   @@index([usedAt])
 }
 
+enum CardGameType {
+  POKEMON
+  // Add other TCGs here (e.g., MAGIC_THE_GATHERING, YUGIOH)
+}
+
+// Generic Card model - abstraction layer for any TCG
+// This allows Listings to work with cards from any game without knowing the specific TCG
+model Card {
+  id            String       @id @default(cuid())
+  gameType      CardGameType @default(POKEMON)
+  
+  // Polymorphic reference to TCG-specific card
+  // For Pokemon cards
+  pokemonCardId String?
+  pokemonCard   PokemonCard? @relation(fields: [pokemonCardId], references: [id], onDelete: Cascade)
+  
+  // Future: Add other TCG references here
+  // magicCardId  String?
+  // magicCard    MagicCard? @relation(...)
+  // yugiohCardId String?
+  // yugiohCard   YugiohCard? @relation(...)
+  
+  // PSA spec ID is at the card level (not listing level)
+  // This represents the PSA specification for this card variant
+  psaSpecId     Int?
+  
+  createdAt     DateTime     @default(now())
+  updatedAtDb   DateTime     @updatedAt
+  
+  // Relationships
+  listings      Listing[]
+  
+  @@index([gameType])
+  @@index([pokemonCardId])
+  @@index([psaSpecId])
+}
+
+// Pokemon TCG Sets - source of truth from pokemon-tcg-data
+model PokemonSet {
+  id            String       @id // e.g., "base1", "sv1"
+  gameType      CardGameType @default(POKEMON)
+  name          String
+  series        String
+  printedTotal  Int?
+  total         Int
+  ptcgoCode     String?
+  releaseDate   String?
+  updatedAt     String?
+  logoUrl       String?
+  symbolUrl     String?
+
+  legalities    Json? // Legalities stored as JSON for flexibility
+
+  createdAt     DateTime     @default(now())
+  updatedAtDb   DateTime     @updatedAt
+
+  pokemonCards  PokemonCard[]
+
+  @@index([series])
+  @@index([name])
+  @@index([gameType])
+}
+
+// Pokemon TCG Cards - source of truth from pokemon-tcg-data
+model PokemonCard {
+  id                    String   @id // e.g., "base1-1", "sv1-125"
+  pokemonSetId          String
+  pokemonSet            PokemonSet @relation(fields: [pokemonSetId], references: [id], onDelete: Cascade)
+
+  name                  String
+  supertype             String
+  subtypes              String[]
+  number                String
+
+  cardData              Json? // Full card JSON for complex fields (attacks, abilities, weaknesses, hp, types, evolvesFrom, evolvesTo, etc.)
+  metadata              Json? // Metadata like regulationMark, nationalPokedexNumbers, legalities
+
+  imageSmallUrl         String?
+  imageLargeUrl         String?
+
+  artist                String?
+  rarity                String?
+  flavorText            String?
+
+  createdAt             DateTime @default(now())
+  updatedAtDb           DateTime @updatedAt
+
+  pokemonPSASpecs       PokemonPSASpec[]
+  pokemonSalesData      PokemonSalesData[]
+  cards                 Card[]
+
+  @@index([pokemonSetId, number])
+  @@index([name])
+  @@index([supertype])
+  @@index([number])
+}
+
+// PSA Specification - maps PSA specIds to Cards for matching cert numbers
+// Note: Only PSA can create specIds
+model PokemonPSASpec {
+  id            String   @id @default(cuid())
+  specId        Int      @unique // PSA SpecID (e.g., 14806987)
+  specNumber    String?  // PSA SpecNumber (e.g., "KSF4000125")
+
+  pokemonCardId String   // Link to PokemonCard
+  pokemonCard   PokemonCard @relation(fields: [pokemonCardId], references: [id], onDelete: Cascade)
+
+  cardNumber    String?
+  subject       String?
+  variety       String?
+  brand         String?
+  year          String?
+  labelType     String?
+
+  createdAt     DateTime @default(now())
+  updatedAtDb   DateTime @updatedAt
+
+  pokemonSalesData PokemonSalesData[]
+
+  @@index([specId])
+  @@index([pokemonCardId])
+  @@index([cardNumber, subject, variety])
+}
+
+// Sales data from PSA API - links to PSASpecs and Cards
+model PokemonSalesData {
+  id              String   @id @default(cuid())
+
+  pokemonPSASpecId String?
+  pokemonPSASpec  PokemonPSASpec? @relation(fields: [pokemonPSASpecId], references: [id], onDelete: SetNull)
+
+  pokemonCardId   String?
+  pokemonCard     PokemonCard? @relation(fields: [pokemonCardId], references: [id], onDelete: SetNull)
+
+  certNumber      String?
+  value           Float
+  date            DateTime
+  isAuction       Boolean  @default(false)
+  imageUrl        String?
+  title           String?
+
+  psaApiResponse  Json?
+
+  source          String?
+  sourceId        String?
+
+  createdAt       DateTime @default(now())
+  updatedAtDb     DateTime @updatedAt
+
+  @@index([certNumber])
+  @@index([pokemonCardId])
+  @@index([pokemonPSASpecId])
+  @@index([date])
+  @@index([value])
+}
