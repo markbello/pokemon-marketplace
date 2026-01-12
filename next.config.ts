@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   images: {
     // Allow images from the public directory
     unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.pokemontcg.io',
+        pathname: '/**',
+      },
+    ],
   },
 };
 

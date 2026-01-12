@@ -2,6 +2,7 @@ import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
+import { SetsSection } from '@/components/sets/SetsSection';
 
 export default async function Home() {
   const auth0 = await getAuth0Client();
@@ -28,16 +29,21 @@ export default async function Home() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">All listings</h2>
-            {listings.length > 0 && (
-              <p className="text-muted-foreground text-sm">
-                Showing {listings.length} listing{listings.length === 1 ? '' : 's'}
-              </p>
-            )}
-          </div>
+      <div className="mx-auto max-w-6xl">
+        <div className="space-y-12">
+          {/* Sets Section */}
+          <SetsSection />
+
+          {/* Listings Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">All listings</h2>
+              {listings.length > 0 && (
+                <p className="text-muted-foreground text-sm">
+                  Showing {listings.length} listing{listings.length === 1 ? '' : 's'}
+                </p>
+              )}
+            </div>
 
           {listings.length === 0 ? (
             <p className="text-muted-foreground text-sm">
@@ -75,6 +81,7 @@ export default async function Home() {
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
