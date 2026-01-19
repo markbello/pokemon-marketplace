@@ -2,7 +2,7 @@ import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListingBuyButton } from '@/components/listings/ListingBuyButton';
-import { SetsSection } from '@/components/sets/SetsSection';
+import { CardsSection } from '@/components/cards/CardsSection';
 
 export default async function Home() {
   const auth0 = await getAuth0Client();
@@ -31,8 +31,8 @@ export default async function Home() {
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="space-y-12">
-          {/* Sets Section */}
-          <SetsSection />
+          {/* Cards Section - PM-90: Grading-first approach */}
+          <CardsSection />
 
           {/* Listings Section */}
           <div className="space-y-4">

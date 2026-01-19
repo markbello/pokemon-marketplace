@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getAuth0Client } from '@/lib/auth0';
 import { prisma } from '@/lib/prisma';
 import { canSell } from '@/lib/seller-access';
+import {
+  findOrCreateCardAndCertificateFromPSACertificate,
+  lookupPSACertificate,
+  normalizePSACertNumber,
+} from '@/lib/psa-api';
 
 export async function GET() {
   try {
@@ -96,17 +101,19 @@ export async function POST(request: Request) {
       currency = 'USD',
       sellerNotes,
       imageUrl,
+      psaCertNumber,
+      cardId,
+      gradingCertificateId,
     } = body as {
       displayTitle?: string;
       askingPriceCents?: number;
       currency?: string;
       sellerNotes?: string;
       imageUrl?: string;
+      psaCertNumber?: string;
+      cardId?: string;
+      gradingCertificateId?: string;
     };
-
-    if (!displayTitle || typeof displayTitle !== 'string') {
-      return NextResponse.json({ error: 'displayTitle is required' }, { status: 400 });
-    }
 
     if (
       askingPriceCents === undefined ||
@@ -124,14 +131,112 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'currency must be a non-empty string' }, { status: 400 });
     }
 
+    let resolvedCardId = cardId || null;
+    let resolvedCertificateId: string | null = gradingCertificateId || null;
+    let resolvedCertNumber = psaCertNumber?.trim() || null;
+    let resolvedImageUrl = imageUrl?.trim() || null;
+    let resolvedDisplayTitle =
+      typeof displayTitle === 'string' && displayTitle.trim() ? displayTitle.trim() : null;
+
+    if (resolvedCertificateId) {
+      const certificate = await prisma.gradingCertificate.findUnique({
+        where: { id: resolvedCertificateId },
+      });
+
+      if (!certificate) {
+        return NextResponse.json({ error: 'gradingCertificateId is invalid' }, { status: 400 });
+      }
+
+      resolvedCardId = resolvedCardId || certificate.cardId;
+      resolvedCertNumber = resolvedCertNumber || certificate.certNumber;
+      resolvedImageUrl = resolvedImageUrl || certificate.frontImageUrl;
+    }
+
+    if (!resolvedCertNumber) {
+      return NextResponse.json({ error: 'psaCertNumber is required' }, { status: 400 });
+    }
+
+    if (resolvedCertNumber) {
+      const normalizedCertNumber = normalizePSACertNumber(resolvedCertNumber);
+      if (!resolvedCertificateId && normalizedCertNumber) {
+        const existingCertificate = await prisma.gradingCertificate.findUnique({
+          where: {
+            gradingCompany_certNumber: {
+              gradingCompany: 'PSA',
+              certNumber: normalizedCertNumber,
+            },
+          },
+        });
+
+        if (existingCertificate) {
+          resolvedCertificateId = existingCertificate.id;
+          resolvedCardId = resolvedCardId || existingCertificate.cardId;
+          resolvedImageUrl = resolvedImageUrl || existingCertificate.frontImageUrl;
+        }
+      }
+
+      if (resolvedCardId) {
+        resolvedCertNumber = normalizedCertNumber;
+      }
+
+      if (!resolvedCardId || !resolvedCertificateId) {
+        const lookupResult = await lookupPSACertificate(normalizedCertNumber);
+
+        if (!lookupResult.success || !lookupResult.data) {
+          return NextResponse.json(
+            { error: lookupResult.error || 'Failed to lookup PSA certificate' },
+            { status: lookupResult.statusCode ?? 500 },
+          );
+        }
+
+        if (!resolvedDisplayTitle) {
+          const subject = lookupResult.data.Subject || 'PSA Card';
+          const variety = lookupResult.data.Variety ? ` - ${lookupResult.data.Variety}` : '';
+          const cardNumber = lookupResult.data.CardNumber
+            ? ` #${lookupResult.data.CardNumber}`
+            : '';
+          const brand = lookupResult.data.Brand ? ` (${lookupResult.data.Brand})` : '';
+          resolvedDisplayTitle = `${subject}${variety}${cardNumber}${brand}`;
+        }
+
+        const { cardId: createdCardId, certificateId } =
+          await findOrCreateCardAndCertificateFromPSACertificate(
+            lookupResult.data,
+            normalizedCertNumber,
+          );
+
+        if (!createdCardId) {
+          return NextResponse.json(
+            { error: 'Failed to create card from PSA certificate' },
+            { status: 500 },
+          );
+        }
+
+        resolvedCardId = createdCardId;
+        resolvedCertificateId = certificateId;
+        resolvedCertNumber = normalizedCertNumber;
+      }
+    }
+
+    if (!resolvedImageUrl && resolvedCardId) {
+      const card = await prisma.card.findUnique({
+        where: { id: resolvedCardId },
+        select: { frontImageUrl: true },
+      });
+      resolvedImageUrl = card?.frontImageUrl ?? null;
+    }
+
     const listing = await prisma.listing.create({
       data: {
         sellerId: userId,
-        displayTitle: displayTitle.trim(),
+        displayTitle: resolvedDisplayTitle || 'PSA Card',
         askingPriceCents,
         currency: currency.trim().toUpperCase(),
         sellerNotes: sellerNotes?.trim() || null,
-        imageUrl: imageUrl?.trim() || null,
+        imageUrl: resolvedImageUrl,
+        cardId: resolvedCardId,
+        psaCertNumber: resolvedCertNumber,
+        gradingCertificateId: resolvedCertificateId,
         status: 'PUBLISHED', // Default to published - sellers can move to draft if needed
       },
     });

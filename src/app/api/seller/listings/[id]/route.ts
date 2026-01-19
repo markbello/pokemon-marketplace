@@ -96,6 +96,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data.status = status;
     }
 
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'No valid fields provided for update' }, { status: 400 });
     }

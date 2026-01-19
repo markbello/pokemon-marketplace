@@ -57,18 +57,33 @@ export async function getAppBaseUrl(): Promise<string> {
   }
 }
 
+// Helper function to get required env vars
+function getRequiredEnv(name: string, label?: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required env var: ${name}${label ? ` (${label})` : ''}`);
+  }
+  return value;
+}
+
+// Helper function to get optional env vars
+function getOptionalEnv(name: string): string | undefined {
+  return process.env[name];
+}
+
 // === ENVIRONMENT VARIABLE GETTERS ===
 
 export function getStripeSecretKey(): string {
-  return process.env.STRIPE_SECRET_KEY!;
+  return getRequiredEnv('STRIPE_SECRET_KEY', 'Stripe secret key');
 }
 
 export function getStripePublishableKey(): string {
-  return process.env.STRIPE_PUBLISHABLE_KEY!;
+  return getRequiredEnv('STRIPE_PUBLISHABLE_KEY', 'Stripe publishable key');
 }
 
 export function getStripeWebhookSecret(): string | undefined {
-  return process.env.STRIPE_WEBHOOK_SECRET;
+  // optional in dev (signature verification skipped)
+  return getOptionalEnv('STRIPE_WEBHOOK_SECRET');
 }
 
 export function getAuth0ManagementCredentials(): {
@@ -76,17 +91,19 @@ export function getAuth0ManagementCredentials(): {
   clientId: string;
   clientSecret: string;
 } {
-  return {
-    domain: process.env.AUTH0_DOMAIN!,
-    clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID!,
-    clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET!,
-  };
+  const domain = getRequiredEnv('AUTH0_DOMAIN', 'Auth0 domain');
+  const clientId = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_ID', 'Auth0 management client id');
+  const clientSecret = getRequiredEnv(
+    'AUTH0_MANAGEMENT_CLIENT_SECRET',
+    'Auth0 management client secret',
+  );
+
+  return { domain, clientId, clientSecret };
 }
 
 /**
  * Gets Auth0 SDK credentials for the current environment.
- * These are used by the @auth0/nextjs-auth0 SDK for user authentication.
- * Note: These are different from management API credentials - use regular Auth0 application credentials.
+ * These are used by the @auth0/nextjs-auth0 SDK.
  */
 export function getAuth0SdkCredentials(): {
   issuerBaseUrl: string;
@@ -94,24 +111,40 @@ export function getAuth0SdkCredentials(): {
   clientSecret: string;
   secret: string;
 } {
-  const domain = process.env.AUTH0_DOMAIN!;
-  return {
-    issuerBaseUrl: `https://${domain}`,
-    // Use regular Auth0 application credentials (not management API)
-    clientId: process.env.AUTH0_CLIENT_ID!,
-    clientSecret: process.env.AUTH0_CLIENT_SECRET!,
-    secret: process.env.AUTH0_SECRET!,
-  };
+  const domain = getRequiredEnv('AUTH0_DOMAIN', 'Auth0 domain');
+  const issuerBaseUrl = `https://${domain}`;
+
+  const clientId = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_ID', 'Auth0 client ID');
+  const clientSecret = getRequiredEnv('AUTH0_MANAGEMENT_CLIENT_SECRET', 'Auth0 client secret');
+
+  // AUTH0_SECRET is used for session encryption
+  const secret = getRequiredEnv('AUTH0_SECRET', 'Auth0 secret');
+
+  return { issuerBaseUrl, clientId, clientSecret, secret };
 }
 
 export function getDatabaseUrl(): string {
-  return process.env.DATABASE_URL!;
+  return getRequiredEnv('DATABASE_URL', 'Database URL');
 }
 
 export function getShippoToken(): string {
-  return process.env.SHIPPO_TOKEN!;
+  return getRequiredEnv('SHIPPO_TOKEN', 'Shippo API token');
 }
 
 export function getShippoWebhookSecret(): string | undefined {
-  return process.env.SHIPPO_WEBHOOK_SECRET;
+  // Optional - used for webhook signature verification
+  return getOptionalEnv('SHIPPO_WEBHOOK_SECRET');
+}
+
+// === PSA API CONFIG ===
+export function getPSAApiKey(): string | undefined {
+  return getOptionalEnv('PSA_API_KEY');
+}
+
+export function getPSAApiBaseUrl(): string {
+  return getOptionalEnv('PSA_API_BASE_URL') ?? 'https://api.psacard.com';
+}
+
+export function getPSAApiEndpoint(): string | undefined {
+  return getOptionalEnv('PSA_API_ENDPOINT');
 }
