@@ -1,0 +1,402 @@
+[
+  {
+    "id": "cmj7n595n0000cb4ifuosy7c0",
+    "code": "ALAKAZAM-E653",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.043"
+  },
+  {
+    "id": "cmj7n59750001cb4iekvwugwj",
+    "code": "FLAREON-5435",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.098"
+  },
+  {
+    "id": "cmj7n597t0002cb4ixia2zb9f",
+    "code": "MACHAMP-356E",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.122"
+  },
+  {
+    "id": "cmj7n599r0003cb4izf086j0t",
+    "code": "GYARADOS-D115",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.191"
+  },
+  {
+    "id": "cmj7n59fr0004cb4i9k290dk3",
+    "code": "FLAREON-D7C8",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.408"
+  },
+  {
+    "id": "cmj7n59lu0005cb4i667twx0k",
+    "code": "CHARIZARD-4341",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.626"
+  },
+  {
+    "id": "cmj7n59oo0006cb4iqcjf1hq7",
+    "code": "SALAMENCE-444D",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.728"
+  },
+  {
+    "id": "cmj7n59pn0007cb4iflffefso",
+    "code": "ESPEON-033B",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.763"
+  },
+  {
+    "id": "cmj7n59qb0008cb4in7ts4w06",
+    "code": "UMBREON-4BE1",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.788"
+  },
+  {
+    "id": "cmj7n59rc0009cb4i4gnql788",
+    "code": "MOLTRES-999B",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.825"
+  },
+  {
+    "id": "cmj7n59sg000acb4itduferxr",
+    "code": "GYARADOS-D641",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.864"
+  },
+  {
+    "id": "cmj7n59t4000bcb4isghlt1ta",
+    "code": "LAPRAS-348B",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.888"
+  },
+  {
+    "id": "cmj7n59tv000ccb4izho3r3sr",
+    "code": "MEWTWO-F2C3",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.915"
+  },
+  {
+    "id": "cmj7n59uj000dcb4ilrif8mw3",
+    "code": "ARTICUNO-614C",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.939"
+  },
+  {
+    "id": "cmj7n59v6000ecb4ietdnlgdw",
+    "code": "GARCHOMP-856F",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.963"
+  },
+  {
+    "id": "cmj7n59vy000fcb4ivorc6e93",
+    "code": "MACHAMP-4AE7",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:34.99"
+  },
+  {
+    "id": "cmj7n59wq000gcb4iwrq6kd9z",
+    "code": "GENGAR-E467",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.019"
+  },
+  {
+    "id": "cmj7n59xg000hcb4irmn6jqc8",
+    "code": "FLAREON-D0B6",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.044"
+  },
+  {
+    "id": "cmj7n59y4000icb4iq72gwm8a",
+    "code": "MOLTRES-8863",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.069"
+  },
+  {
+    "id": "cmj7n59yt000jcb4i0nyb1z2o",
+    "code": "SNORLAX-6CFD",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.093"
+  },
+  {
+    "id": "cmj7n59zn000kcb4ilxh3t3yo",
+    "code": "EEVEE-70AD",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.123"
+  },
+  {
+    "id": "cmj7n5a08000lcb4ia16wp56k",
+    "code": "EEVEE-B9B9",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.144"
+  },
+  {
+    "id": "cmj7n5a0t000mcb4inokecezm",
+    "code": "CHARIZARD-B33F",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.165"
+  },
+  {
+    "id": "cmj7n5a4h000ncb4ij6139ynv",
+    "code": "CHARIZARD-6815",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.298"
+  },
+  {
+    "id": "cmj7n5a56000ocb4i2nl3xumx",
+    "code": "ARTICUNO-50BC",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.322"
+  },
+  {
+    "id": "cmj7n5a5r000pcb4i0r4m7l3i",
+    "code": "BLASTOISE-9A65",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.343"
+  },
+  {
+    "id": "cmj7n5a6n000qcb4igvsbqloo",
+    "code": "MOLTRES-3FA0",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.375"
+  },
+  {
+    "id": "cmj7n5a82000rcb4iwju7ou87",
+    "code": "JOLTEON-A559",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.426"
+  },
+  {
+    "id": "cmj7n5a8u000scb4iviw14utl",
+    "code": "GYARADOS-36D9",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.454"
+  },
+  {
+    "id": "cmj7n5a9x000tcb4i0vrvslax",
+    "code": "LAPRAS-E900",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.494"
+  },
+  {
+    "id": "cmj7n5aaq000ucb4i8nwqv8jr",
+    "code": "ZAPDOS-D460",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.522"
+  },
+  {
+    "id": "cmj7n5abe000vcb4imq7lhto3",
+    "code": "EEVEE-784E",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.546"
+  },
+  {
+    "id": "cmj7n5ac2000wcb4ikl3mkrd9",
+    "code": "JOLTEON-AA63",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.57"
+  },
+  {
+    "id": "cmj7n5aco000xcb4ixul3m76p",
+    "code": "GYARADOS-8D7B",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.593"
+  },
+  {
+    "id": "cmj7n5add000ycb4im6f7vn1w",
+    "code": "MACHAMP-C42F",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.617"
+  },
+  {
+    "id": "cmj7n5adx000zcb4i2fnltet2",
+    "code": "SNORLAX-4B49",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.638"
+  },
+  {
+    "id": "cmj7n5aet0010cb4i6jc29vc7",
+    "code": "ARTICUNO-B7A7",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.67"
+  },
+  {
+    "id": "cmj7n5afh0011cb4iqm4xv4bh",
+    "code": "SALAMENCE-E353",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.694"
+  },
+  {
+    "id": "cmj7n5ag80012cb4itxz3dcfq",
+    "code": "CHARIZARD-7007",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.72"
+  },
+  {
+    "id": "cmj7n5agz0013cb4i4clvvvls",
+    "code": "DRAGONITE-0F4E",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.747"
+  },
+  {
+    "id": "cmj7n5ahk0014cb4iu9o99y1j",
+    "code": "ARTICUNO-94D4",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.768"
+  },
+  {
+    "id": "cmj7n5aib0015cb4ic37qffyv",
+    "code": "LUCARIO-CBC8",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.795"
+  },
+  {
+    "id": "cmj7n5aj20016cb4ii2clgeys",
+    "code": "MACHAMP-FE6D",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.822"
+  },
+  {
+    "id": "cmj7n5ajp0017cb4i4gmwxksv",
+    "code": "MOLTRES-583C",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.845"
+  },
+  {
+    "id": "cmj7n5ake0018cb4iiaxvz2qc",
+    "code": "SNORLAX-CBAC",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.87"
+  },
+  {
+    "id": "cmj7n5al30019cb4inmhmatvn",
+    "code": "UMBREON-22B6",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.895"
+  },
+  {
+    "id": "cmj7n5als001acb4ioq2acbfu",
+    "code": "EEVEE-EFD5",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.921"
+  },
+  {
+    "id": "cmj7n5amg001bcb4ii8mcthli",
+    "code": "VENUSAUR-9EE6",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.944"
+  },
+  {
+    "id": "cmj7n5an7001ccb4ivospvkhy",
+    "code": "PIKACHU-185D",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:35.972"
+  },
+  {
+    "id": "cmj7n5ao5001dcb4if1vmbfhe",
+    "code": "LAPRAS-4722",
+    "createdBy": "production-seed",
+    "usedBy": null,
+    "usedAt": null,
+    "createdAt": "2025-12-15 21:03:36.005"
+  }
+]

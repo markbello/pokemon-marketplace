@@ -1,0 +1,29 @@
+[
+  {
+    "id": "auth0|691b96fb341d15ba785d9c94",
+    "displayName": "markseller",
+    "avatarUrl": "https://s.gravatar.com/avatar/cf128b23b754bbce5275c7c99669853e?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fma.png",
+    "stripeCustomerId": null,
+    "stripeAccountId": "acct_1SUaEKLMHz2IKK5Q",
+    "createdAt": "2025-11-17 21:45:00.505",
+    "updatedAt": "2025-11-17 21:45:03.302"
+  },
+  {
+    "id": "google-oauth2|100817367081355014488",
+    "displayName": "marks_gmail",
+    "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocLUudq-F571ph-HX43djvOdFvfZ9Ij9zclOk8r_ITJ8iQaIvA=s96-c",
+    "stripeCustomerId": "cus_TaY9C8WdjAU72D",
+    "stripeAccountId": null,
+    "createdAt": "2025-12-12 03:29:25.303",
+    "updatedAt": "2025-12-13 22:46:00.45"
+  },
+  {
+    "id": "auth0|691b43ec3761c686bb98232c",
+    "displayName": "buyermark",
+    "avatarUrl": "https://s.gravatar.com/avatar/a94fc9f734d1510f6e41b8b8c50a53e1?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fma.png",
+    "stripeCustomerId": "cus_TRTIoeFmqWk0ZI",
+    "stripeAccountId": null,
+    "createdAt": "2025-11-17 21:53:05.678",
+    "updatedAt": "2025-12-13 22:46:12.27"
+  }
+]
