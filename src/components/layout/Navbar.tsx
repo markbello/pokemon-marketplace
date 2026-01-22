@@ -10,43 +10,50 @@ export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
-      <div className="flex h-20 w-full items-center justify-between px-4">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/kado-logo.jpg"
-            alt="kado.io"
-            width={200}
-            height={60}
-            className="h-14 w-auto"
-            priority
-          />
-        </Link>
-
-        <div className="flex items-center gap-6">
+    <nav className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+      <div className="flex h-20 w-full items-center justify-between px-6">
+        <div className="flex items-center gap-10">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/kado-logo-D7tb47J6.png"
+              alt="kado.io"
+              width={44}
+              height={44}
+              className="h-11 w-11"
+              priority
+            />
+          </Link>
           <nav className="flex items-center gap-6">
             <Link
               href="/"
               className={cn(
-                'hover:text-primary text-sm font-medium transition-colors',
+                'hover:text-foreground text-sm font-medium transition-colors',
                 pathname === '/' ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
               Browse
             </Link>
             <Link
-              href="/account/seller"
+              href="/collection"
               className={cn(
-                'hover:text-primary text-sm font-medium transition-colors',
-                pathname?.startsWith('/account/seller')
+                'hover:text-foreground text-sm font-medium transition-colors',
+                pathname?.startsWith('/collection')
                   ? 'text-foreground'
                   : 'text-muted-foreground',
               )}
             >
-              Sell
+              Collection
             </Link>
           </nav>
+        </div>
 
+        <div className="flex items-center gap-6">
+          <Link
+            href="/account/seller"
+            className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-5 py-2 text-sm font-medium transition"
+          >
+            + Sell a card
+          </Link>
           <UserMenu />
         </div>
       </div>
