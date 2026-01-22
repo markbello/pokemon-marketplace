@@ -123,7 +123,14 @@ export class TrackingService {
 
     // Check if webhook already exists
     const existingWebhooks = await shippo.webhooks.listWebhooks();
-    const existing = existingWebhooks.results?.find((w: any) => w.url === webhookUrl);
+    const existing = existingWebhooks.results?.find((webhook: unknown) => {
+      if (!webhook || typeof webhook !== 'object') {
+        return false;
+      }
+
+      const url = (webhook as { url?: string }).url;
+      return url === webhookUrl;
+    });
 
     if (existing) {
       console.log(`Webhook already registered: ${webhookUrl}`);
@@ -133,7 +140,7 @@ export class TrackingService {
     // Create new webhook
     const webhook = await shippo.webhooks.createWebhook({
       url: webhookUrl,
-      event: 'track_updated' as any, // Type assertion for enum
+      event: 'track_updated' as const,
       active: true,
     });
 

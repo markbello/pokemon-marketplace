@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import Link from 'next/link';
 import { User, ShoppingBag, Settings, LogOut, Store, Shield } from 'lucide-react';
@@ -90,21 +89,16 @@ export default function UserMenu() {
     return <div className="bg-muted h-12 w-12 animate-pulse rounded-full" />;
   }
 
-  // If no user, show sign up and sign in buttons (PM-65)
+  // If no user, show login / sign up link
   if (!user) {
     return (
-      <div className="flex items-center gap-3">
-        <Button variant="outline" asChild>
-          <Link href="/api/auth/login" prefetch={false}>
-            Sign In
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href="/signup" prefetch={false}>
-            Sign Up
-          </Link>
-        </Button>
-      </div>
+      <Link
+        href="/api/auth/login"
+        className="text-sm font-medium text-muted-foreground hover:text-foreground transition"
+        prefetch={false}
+      >
+        Login / Sign up
+      </Link>
     );
   }
 
