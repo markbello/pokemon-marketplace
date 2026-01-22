@@ -21,6 +21,30 @@ A modern, secure marketplace for buying and selling trading cards built with Nex
 - **Payments**: Stripe Connect for marketplace transactions
 - **Hosting**: Vercel
 
+## 🧩 Feature Flags
+
+Feature flags are centralized in `src/lib/feature-flags.ts` under `FEATURE_FLAGS`.
+
+### Enabling Flags (local/dev)
+
+Use the `toggleOn` query param to turn flags on:
+
+```
+/?toggleOn=TAG_ON_LANDING_PAGE
+```
+
+Multiple flags can be enabled using a comma-separated list or repeated params:
+
+```
+/?toggleOn=TAG_ON_LANDING_PAGE,ANOTHER_FLAG
+/?toggleOn=TAG_ON_LANDING_PAGE&toggleOn=ANOTHER_FLAG
+```
+
+### Adding a New Flag
+
+1. Add it to `FEATURE_FLAGS` in `src/lib/feature-flags.ts`.
+2. Wrap the target UI with a flag check via `getEnabledFeatureFlags()`.
+
 ## ⚡ Quick Start
 
 **TL;DR** - If you've already set up your environment:
