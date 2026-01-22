@@ -6,7 +6,14 @@ export default function TagSection() {
       <section className="bg-[#000000] text-white">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center">
           <div className="space-y-4">
-            <Image src="/tag-logo.png" alt="TAG" width={90} height={30} className="h-8 w-auto" />
+            <Image
+              src="/tag-logo.png"
+              alt="TAG"
+              width={90}
+              height={30}
+              className="h-8 w-auto"
+              unoptimized
+            />
             <h3 className="text-2xl font-semibold">We Partner with TAG</h3>
             <p className="text-sm text-white/70">
               TAG excels in Pok&#233;mon TCG grading through its pioneering AI-driven technology,
@@ -23,6 +30,7 @@ export default function TagSection() {
               width={880}
               height={520}
               className="h-auto w-full max-w-xl object-contain"
+              unoptimized
               priority
             />
           </div>
