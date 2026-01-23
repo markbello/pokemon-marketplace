@@ -93,10 +93,13 @@ export function OnboardingWizard() {
             const metadata = data.user?.user_metadata || {};
 
             // Only set form data if we have actual metadata fields
-            if (metadata.firstName || metadata.lastName || metadata.displayName) {
+            // slug comes from database (data.user.slug), rest comes from Auth0 metadata
+            const slug = data.user?.slug || '';
+            if (metadata.firstName || metadata.lastName || slug) {
               setFormData({
                 firstName: metadata.firstName || '',
                 lastName: metadata.lastName || '',
+                slug: slug,
                 displayName: metadata.displayName || '',
                 phone: metadata.phone || '',
                 ...(metadata.preferences && {
@@ -107,13 +110,14 @@ export function OnboardingWizard() {
             }
           }
         } catch {
-          // Fallback to session user data
+          // Fallback to session user data (slug won't be available here)
           if (user?.user_metadata) {
             const metadata = user.user_metadata;
-            if (metadata.firstName || metadata.lastName || metadata.displayName) {
+            if (metadata.firstName || metadata.lastName) {
               setFormData({
                 firstName: metadata.firstName || '',
                 lastName: metadata.lastName || '',
+                slug: '', // Not available in session, user will need to enter
                 displayName: metadata.displayName || '',
                 phone: metadata.phone || '',
                 ...(metadata.preferences && {
@@ -190,6 +194,7 @@ export function OnboardingWizard() {
       body: JSON.stringify({
         firstName: data.firstName,
         lastName: data.lastName,
+        slug: data.slug,
         displayName: data.displayName,
         phone: data.phone,
         preferences: {
@@ -286,7 +291,7 @@ export function OnboardingWizard() {
             {currentStep === 2 && (
               <WelcomeStep
                 onComplete={handleComplete}
-                userName={formData.displayName || user?.name || undefined}
+                userName={formData.displayName || formData.slug || user?.name || undefined}
               />
             )}
           </div>

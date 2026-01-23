@@ -1,5 +1,6 @@
 export const FEATURE_FLAGS = {
   TAG_ON_LANDING_PAGE: 'TAG_ON_LANDING_PAGE',
+  MOCK_COLLECTION_DATA: 'MOCK_COLLECTION_DATA',
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

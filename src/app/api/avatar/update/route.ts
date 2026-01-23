@@ -1,6 +1,7 @@
 import { getAuth0Client } from '@/lib/auth0';
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagementClient } from '@/lib/auth0-management';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Update user avatar in Auth0 user_metadata
@@ -58,13 +59,20 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Update user metadata
+    // Update user metadata in Auth0
     await management.users.update(
       { id: userId },
       {
         user_metadata: userMetadata,
       },
     );
+
+    // Sync avatar to database cache for other users viewing this profile
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { avatarUrl: secure_url },
+      create: { id: userId, avatarUrl: secure_url },
+    });
 
     return NextResponse.json({
       success: true,

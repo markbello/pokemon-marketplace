@@ -51,16 +51,18 @@ export async function getOrCreateUser(auth0UserId: string) {
   const auth0User = await getAuth0User(auth0UserId);
 
   // Update our cache with latest Auth0 data
+  // Avatar priority: custom upload (user_metadata.avatar) > social login picture > null
+  const avatarUrl = auth0User.user_metadata?.avatar?.secure_url || auth0User.picture || null;
   const dbUser = await prisma.user.upsert({
     where: { id: auth0UserId },
     update: {
       displayName: auth0User.user_metadata?.displayName || null,
-      avatarUrl: auth0User.user_metadata?.picture || auth0User.picture || null,
+      avatarUrl,
     },
     create: {
       id: auth0UserId,
       displayName: auth0User.user_metadata?.displayName || null,
-      avatarUrl: auth0User.user_metadata?.picture || auth0User.picture || null,
+      avatarUrl,
     },
   });
 
@@ -113,12 +115,13 @@ export async function getUserByStripeCustomerId(stripeCustomerId: string) {
  */
 export async function refreshUserCache(auth0UserId: string) {
   const auth0User = await getAuth0User(auth0UserId);
+  const avatarUrl = auth0User.user_metadata?.avatar?.secure_url || auth0User.picture || null;
 
   await prisma.user.update({
     where: { id: auth0UserId },
     data: {
       displayName: auth0User.user_metadata?.displayName || null,
-      avatarUrl: auth0User.user_metadata?.picture || auth0User.picture || null,
+      avatarUrl,
     },
   });
 

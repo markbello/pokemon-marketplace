@@ -1,9 +1,10 @@
 import { getAuth0Client } from '@/lib/auth0';
 import { NextResponse } from 'next/server';
 import { getManagementClient } from '@/lib/auth0-management';
+import { prisma } from '@/lib/prisma';
 
 /**
- * Get current user profile with full user_metadata
+ * Get current user profile with full user_metadata and database fields
  * GET /api/user/me
  */
 export async function GET() {
@@ -34,6 +35,18 @@ export async function GET() {
     const userMetadata = userData.user_metadata || {};
     const appMetadata = userData.app_metadata || {};
 
+    // Sync Auth0 data to database cache (read-through cache pattern)
+    // This ensures avatarUrl and displayName are always up-to-date in DB
+    const avatarUrl = userMetadata.avatar?.secure_url || userData.picture || null;
+    const displayName = userMetadata.displayName || null;
+    
+    const dbUser = await prisma.user.upsert({
+      where: { id: userId },
+      update: { avatarUrl, displayName },
+      create: { id: userId, avatarUrl, displayName },
+      select: { slug: true },
+    });
+
     return NextResponse.json(
       {
         user: {
@@ -44,6 +57,8 @@ export async function GET() {
           picture: userData.picture,
           user_metadata: userMetadata,
           app_metadata: appMetadata,
+          // Database fields
+          slug: dbUser?.slug || null,
         },
       },
       { status: 200 },

@@ -12,7 +12,8 @@ datasource db {
 
 model User {
   id               String    @id       // Auth0 user ID (e.g., "auth0|123456")
-  displayName      String?             // Cached from Auth0 user_metadata.displayName
+  slug             String?   @unique   // URL-friendly username (e.g., "linda12345")
+  displayName      String?             // Display name (can have spaces, emoji, etc.)
   avatarUrl        String?             // Cached from Auth0 user_metadata.picture
   stripeCustomerId String?   @unique   // Business data (not in Auth0)
   stripeAccountId  String?   @unique   // Stripe Connect Express account ID (for sellers)
@@ -22,7 +23,9 @@ model User {
   // Relationships
   buyerOrders      Order[]    @relation("BuyerOrders")
   listings         Listing[]  @relation("SellerListings")
+  collectionItems  CollectionItem[]
 
+  @@index([slug])
   @@index([displayName])
   @@index([stripeCustomerId])
   @@index([stripeAccountId])
@@ -234,6 +237,20 @@ enum CardGameType {
   // Add other TCGs here (e.g., MAGIC_THE_GATHERING, YUGIOH)
 }
 
+enum SlabCondition {
+  MINT        // Slab is in perfect condition, no visible defects
+  NEAR_MINT   // Minor imperfections, light scratches or scuffs
+  GOOD        // Noticeable wear, scratches, or minor cracks but structurally sound
+  DAMAGED     // Significant cracks, chips, or structural issues
+}
+
+enum RemovalReason {
+  SOLD
+  LOST
+  GIFTED
+  OTHER
+}
+
 model Card {
   id            String       @id @default(cuid())
   gameType      CardGameType @default(POKEMON)
@@ -263,9 +280,10 @@ model Card {
   updatedAtDb   DateTime     @updatedAt
   
   // Relationships
-  listings      Listing[]
-  salesData     SalesData[]
-  certificates  GradingCertificate[]
+  listings        Listing[]
+  salesData       SalesData[]
+  certificates    GradingCertificate[]
+  collectionItems CollectionItem[]
   
   @@index([gameType])
   @@index([psaSpecId])
@@ -292,14 +310,46 @@ model GradingCertificate {
   createdAt      DateTime  @default(now())
   updatedAtDb    DateTime  @updatedAt
 
-  salesData      SalesData[]
-  listings       Listing[]
+  salesData       SalesData[]
+  listings        Listing[]
+  collectionItems CollectionItem[]
 
   @@unique([gradingCompany, certNumber])
   @@index([certNumber])
   @@index([gradingCompany])
   @@index([psaSpecId])
   @@index([cardId])
+}
+
+model CollectionItem {
+  id                   String    @id @default(cuid())
+  
+  // Owner
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Card reference (denormalized for query efficiency)
+  cardId               String
+  card                 Card      @relation(fields: [cardId], references: [id])
+  
+  // Grading certificate (grade, cert number, images)
+  gradingCertificateId String
+  gradingCertificate   GradingCertificate @relation(fields: [gradingCertificateId], references: [id])
+  
+  purchasePriceCents   Int?              // What user paid for the card
+  slabCondition        SlabCondition?    // Physical condition of the slab
+  
+  // Timestamps
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  // Soft-delete for ownership history
+  removedAt            DateTime?         // null = active, set = removed from collection
+  removalReason        RemovalReason?    // Why it was removed (SOLD, LOST, GIFTED, OTHER)
+  
+  @@index([userId, removedAt])               // "My active collection" query
+  @@index([gradingCertificateId, removedAt]) // "Who owns this cert?" query
+  @@index([cardId])                          // Collection items by card
 }
 
 // Generalized sales data model (PM-90)

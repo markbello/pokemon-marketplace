@@ -241,6 +241,29 @@ export async function POST(request: Request) {
       },
     });
 
+    // Auto-add to collection if not already there
+    // If you're listing a card for sale, you own it - so it should be in your collection
+    if (resolvedCardId && resolvedCertificateId) {
+      const existingCollectionItem = await prisma.collectionItem.findFirst({
+        where: {
+          userId,
+          gradingCertificateId: resolvedCertificateId,
+          removedAt: null, // Only check active items
+        },
+      });
+
+      if (!existingCollectionItem) {
+        await prisma.collectionItem.create({
+          data: {
+            userId,
+            cardId: resolvedCardId,
+            gradingCertificateId: resolvedCertificateId,
+            // purchasePriceCents could be set later by the user
+          },
+        });
+      }
+    }
+
     return NextResponse.json({ listing }, { status: 201 });
   } catch (error) {
     console.error('[SellerListings][POST] Error creating listing:', error);
