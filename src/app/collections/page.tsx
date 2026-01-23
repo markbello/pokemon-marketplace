@@ -13,7 +13,7 @@ export default async function CollectionRedirect({ searchParams }: CollectionRed
   const session = await auth0.getSession();
 
   if (!session?.user) {
-    redirect('/api/auth/login?returnTo=/collection');
+    redirect('/api/auth/login?returnTo=/collections');
   }
 
   const userId = session.user.sub;
@@ -41,5 +41,5 @@ export default async function CollectionRedirect({ searchParams }: CollectionRed
       ).toString()
     : '';
   
-  redirect(`/collection/${identifier}${queryString ? `?${queryString}` : ''}`);
+  redirect(`/collections/${identifier}${queryString ? `?${queryString}` : ''}`);
 }
