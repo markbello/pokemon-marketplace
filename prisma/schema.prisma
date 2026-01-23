@@ -205,6 +205,9 @@ model Listing {
   gradingCertificateId String?
   gradingCertificate   GradingCertificate? @relation(fields: [gradingCertificateId], references: [id])
 
+  // Physical condition of the slab
+  slabCondition    SlabCondition?
+
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -242,6 +245,7 @@ enum SlabCondition {
   NEAR_MINT   // Minor imperfections, light scratches or scuffs
   GOOD        // Noticeable wear, scratches, or minor cracks but structurally sound
   DAMAGED     // Significant cracks, chips, or structural issues
+  UNKNOWN     // Self-explanatory
 }
 
 enum RemovalReason {

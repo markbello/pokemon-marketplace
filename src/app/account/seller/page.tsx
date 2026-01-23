@@ -9,6 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -124,6 +132,7 @@ function SellerDashboardContent() {
   const [newListingPrice, setNewListingPrice] = useState('');
   const [newListingNotes, setNewListingNotes] = useState('');
   const [newListingCertNumber, setNewListingCertNumber] = useState('');
+  const [newListingSlabCondition, setNewListingSlabCondition] = useState<string>('');
   const [lookupCard, setLookupCard] = useState<LookupCard | null>(null);
   const [lookupCertificate, setLookupCertificate] = useState<LookupCertificate | null>(null);
   const [lookupPSAData, setLookupPSAData] = useState<LookupPSAData | null>(null);
@@ -207,6 +216,7 @@ function SellerDashboardContent() {
     setNewListingPrice('');
     setNewListingNotes('');
     setNewListingCertNumber('');
+    setNewListingSlabCondition('');
     setLookupCard(null);
     setLookupCertificate(null);
     setLookupPSAData(null);
@@ -274,6 +284,11 @@ function SellerDashboardContent() {
       return;
     }
 
+    if (!newListingSlabCondition) {
+      toast.error('Please select the slab condition');
+      return;
+    }
+
     const parsedPrice = Number.parseFloat(newListingPrice);
     if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
       toast.error('Price must be a non-negative number');
@@ -295,6 +310,7 @@ function SellerDashboardContent() {
           psaCertNumber: lookupCertificate?.certNumber || newListingCertNumber.trim() || undefined,
           cardId: lookupCard?.id,
           gradingCertificateId: lookupCertificate?.id,
+          slabCondition: newListingSlabCondition,
         }),
       });
 
@@ -880,6 +896,24 @@ function SellerDashboardContent() {
                 className="border-input focus-visible:ring-ring bg-background placeholder:text-muted-foreground flex min-h-20 w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
                 disabled={(!lookupCard && !lookupPSAData) || isSavingListing}
               />
+              <div className="space-y-2">
+                <Label htmlFor="slab-condition">Slab Condition *</Label>
+                <Select
+                  value={newListingSlabCondition}
+                  onValueChange={setNewListingSlabCondition}
+                  disabled={(!lookupCard && !lookupPSAData) || isSavingListing}
+                >
+                  <SelectTrigger id="slab-condition">
+                    <SelectValue placeholder="Select slab condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MINT">Mint - Perfect condition, no visible defects</SelectItem>
+                    <SelectItem value="NEAR_MINT">Near Mint - Minor imperfections, light scratches</SelectItem>
+                    <SelectItem value="GOOD">Good - Noticeable wear, scratches, but structurally sound</SelectItem>
+                    <SelectItem value="DAMAGED">Damaged - Significant cracks, chips, or structural issues</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button
