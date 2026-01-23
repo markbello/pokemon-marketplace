@@ -104,6 +104,7 @@ export async function POST(request: Request) {
       psaCertNumber,
       cardId,
       gradingCertificateId,
+      slabCondition,
     } = body as {
       displayTitle?: string;
       askingPriceCents?: number;
@@ -113,7 +114,17 @@ export async function POST(request: Request) {
       psaCertNumber?: string;
       cardId?: string;
       gradingCertificateId?: string;
+      slabCondition?: 'MINT' | 'NEAR_MINT' | 'GOOD' | 'DAMAGED';
     };
+
+    // Validate slab condition is provided
+    const validSlabConditions = ['MINT', 'NEAR_MINT', 'GOOD', 'DAMAGED'];
+    if (!slabCondition || !validSlabConditions.includes(slabCondition)) {
+      return NextResponse.json(
+        { error: 'slabCondition is required and must be one of: MINT, NEAR_MINT, GOOD, DAMAGED' },
+        { status: 400 },
+      );
+    }
 
     if (
       askingPriceCents === undefined ||
@@ -237,9 +248,40 @@ export async function POST(request: Request) {
         cardId: resolvedCardId,
         psaCertNumber: resolvedCertNumber,
         gradingCertificateId: resolvedCertificateId,
+        slabCondition,
         status: 'PUBLISHED', // Default to published - sellers can move to draft if needed
       },
     });
+
+    // Auto-add to collection if not already there
+    // If you're listing a card for sale, you own it - so it should be in your collection
+    if (resolvedCardId && resolvedCertificateId) {
+      const existingCollectionItem = await prisma.collectionItem.findFirst({
+        where: {
+          userId,
+          gradingCertificateId: resolvedCertificateId,
+          removedAt: null, // Only check active items
+        },
+      });
+
+      if (!existingCollectionItem) {
+        await prisma.collectionItem.create({
+          data: {
+            userId,
+            cardId: resolvedCardId,
+            gradingCertificateId: resolvedCertificateId,
+            slabCondition,
+            // purchasePriceCents could be set later by the user
+          },
+        });
+      } else if (existingCollectionItem.slabCondition !== slabCondition) {
+        // Update slab condition if it changed
+        await prisma.collectionItem.update({
+          where: { id: existingCollectionItem.id },
+          data: { slabCondition },
+        });
+      }
+    }
 
     return NextResponse.json({ listing }, { status: 201 });
   } catch (error) {

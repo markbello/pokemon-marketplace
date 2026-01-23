@@ -44,12 +44,16 @@ export default function ProfilePage() {
   const displayUser = userData || user;
   const metadata = getUserMetadata(displayUser);
 
+  // Get slug from userData (fetched from /api/user/me which includes database fields)
+  const userSlug = (userData as { slug?: string } | null)?.slug || '';
+
   // Initialize form with current user data
   const form = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       firstName: metadata?.firstName || '',
       lastName: metadata?.lastName || '',
+      slug: userSlug,
       displayName: metadata?.displayName || '',
       phone: metadata?.phone || '',
       emailNotifications: metadata?.preferences?.emailNotifications ?? true,
@@ -84,16 +88,18 @@ export default function ProfilePage() {
   useEffect(() => {
     if (displayUser) {
       const metadata = getUserMetadata(displayUser);
+      const slug = (userData as { slug?: string } | null)?.slug || '';
       form.reset({
         firstName: metadata?.firstName || '',
         lastName: metadata?.lastName || '',
+        slug: slug,
         displayName: metadata?.displayName || '',
         phone: metadata?.phone || '',
         emailNotifications: metadata?.preferences?.emailNotifications ?? true,
         profileVisibility: metadata?.preferences?.profileVisibility || 'public',
       });
     }
-  }, [displayUser, form]);
+  }, [displayUser, userData, form]);
 
   // Update current avatar URL when user data changes
   useEffect(() => {
@@ -107,15 +113,17 @@ export default function ProfilePage() {
   }, [displayUser]);
 
   // Track basic info changes
-  const basicInfo = form.watch(['firstName', 'lastName', 'displayName', 'phone']);
+  const basicInfo = form.watch(['firstName', 'lastName', 'slug', 'displayName', 'phone']);
   useEffect(() => {
+    const currentSlug = (userData as { slug?: string } | null)?.slug || '';
     const hasChanges =
       basicInfo[0] !== (metadata?.firstName || '') ||
       basicInfo[1] !== (metadata?.lastName || '') ||
-      basicInfo[2] !== (metadata?.displayName || '') ||
-      basicInfo[3] !== (metadata?.phone || '');
+      basicInfo[2] !== currentSlug ||
+      basicInfo[3] !== (metadata?.displayName || '') ||
+      basicInfo[4] !== (metadata?.phone || '');
     setHasBasicChanges(hasChanges);
-  }, [basicInfo, metadata]);
+  }, [basicInfo, metadata, userData]);
 
   // Check if profile is complete
   const profileComplete = metadata?.profileComplete === true;
@@ -140,8 +148,9 @@ export default function ProfilePage() {
 
   // Handle basic info save
   const handleSaveBasicInfo = async () => {
-    if (!form.formState.isValid) {
-      form.trigger();
+    // Trigger validation and wait for result
+    const isValid = await form.trigger();
+    if (!isValid) {
       return;
     }
 
@@ -161,6 +170,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           firstName: form.getValues('firstName'),
           lastName: form.getValues('lastName'),
+          slug: form.getValues('slug'),
           displayName: form.getValues('displayName'),
           phone: form.getValues('phone'),
           preferences: currentPrefs,
@@ -318,18 +328,33 @@ export default function ProfilePage() {
 
                 <FormField
                   control={form.control}
-                  name="displayName"
+                  name="slug"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Display Name</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Input {...field} placeholder="johndoe" />
-                        </div>
+                        <Input {...field} placeholder="johndoe" />
                       </FormControl>
                       <FormMessage />
                       <p className="text-sm text-muted-foreground">
-                        This is how your name will appear to other users
+                        3-20 characters. Letters, numbers, underscores, and dashes allowed. Used in your profile URL.
+                      </p>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="displayName"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Display Name <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="John Doe 🎮" />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-sm text-muted-foreground">
+                        Shown to other users instead of your username. Can include spaces, emoji, etc.
                       </p>
                     </FormItem>
                   )}
@@ -356,9 +381,11 @@ export default function ProfilePage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
+                      const currentSlug = (userData as { slug?: string } | null)?.slug || '';
                       form.reset({
                         firstName: metadata?.firstName || '',
                         lastName: metadata?.lastName || '',
+                        slug: currentSlug,
                         displayName: metadata?.displayName || '',
                         phone: metadata?.phone || '',
                         emailNotifications: metadata?.preferences?.emailNotifications ?? true,

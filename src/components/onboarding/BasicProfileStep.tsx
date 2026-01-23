@@ -56,6 +56,7 @@ export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfile
     defaultValues: {
       firstName: initialData?.firstName || '',
       lastName: initialData?.lastName || '',
+      slug: initialData?.slug || '',
       displayName: initialData?.displayName || '',
       phone: initialData?.phone || '',
     },
@@ -66,82 +67,83 @@ export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfile
   // Update form values when initialData changes (for editing existing profiles)
   useEffect(() => {
     // Only reset if we have actual data (not just an empty object)
-    if (initialData && (initialData.firstName || initialData.lastName || initialData.displayName)) {
+    if (initialData && (initialData.firstName || initialData.lastName || initialData.slug)) {
       form.reset({
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
+        slug: initialData.slug || '',
         displayName: initialData.displayName || '',
         phone: initialData.phone || '',
       });
     }
   }, [initialData, form]);
 
-  const displayName = form.watch('displayName');
+  const slug = form.watch('slug');
 
-  // Debounced username availability check
+  // Debounced slug availability check
   useEffect(() => {
-    if (!displayName || displayName.length < 3) {
+    if (!slug || slug.length < 3) {
       setUsernameError(null);
-      form.clearErrors('displayName');
+      form.clearErrors('slug');
       return;
     }
 
-    // Validate format first
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
-    if (!usernameRegex.test(displayName)) {
-      setUsernameError('Username can only contain letters, numbers, and underscores');
-      form.setError('displayName', {
+    // Validate format first (must start with letter/number, allow letters, numbers, underscores, dashes)
+    const slugRegex = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
+    if (!slugRegex.test(slug)) {
+      setUsernameError('Username must start with a letter or number and can only contain letters, numbers, underscores, and dashes');
+      form.setError('slug', {
         type: 'manual',
-        message: 'Username can only contain letters, numbers, and underscores',
+        message: 'Username must start with a letter or number and can only contain letters, numbers, underscores, and dashes',
       });
       return;
     }
 
-    // If the username matches the initial data (user's current username), it's valid
-    const isOwnUsername = initialData?.displayName && displayName === initialData.displayName;
-    if (isOwnUsername) {
+    // If the slug matches the initial data (user's current slug), it's valid
+    const isOwnSlug = initialData?.slug && slug === initialData.slug;
+    if (isOwnSlug) {
       setUsernameError(null);
-      form.clearErrors('displayName');
+      form.clearErrors('slug');
       return;
     }
 
     const timeoutId = setTimeout(async () => {
       setIsCheckingUsername(true);
       setUsernameError(null);
-      form.clearErrors('displayName');
+      form.clearErrors('slug');
 
       try {
         const response = await fetch(
-          `/api/user/check-username?username=${encodeURIComponent(displayName)}`,
+          `/api/user/check-slug?slug=${encodeURIComponent(slug)}`,
         );
         const data = await response.json();
 
         if (!data.available) {
           setUsernameError('This username is already taken');
-          form.setError('displayName', {
+          form.setError('slug', {
             type: 'manual',
             message: 'This username is already taken',
           });
         } else {
           setUsernameError(null);
-          form.clearErrors('displayName');
+          form.clearErrors('slug');
         }
       } catch {
         // Don't block the user if the check fails
         setUsernameError(null);
-        form.clearErrors('displayName');
+        form.clearErrors('slug');
       } finally {
         setIsCheckingUsername(false);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [displayName, form, initialData?.displayName]);
+  }, [slug, form, initialData?.slug]);
 
   const handleSubmit = async (data: BasicProfileFormData) => {
-    // Check if there's a form error (which includes username validation)
-    const displayNameError = form.formState.errors.displayName;
-    if (displayNameError) {
+    // Check if there's a form error (which includes slug validation)
+    const slugError = form.formState.errors.slug;
+    if (slugError) {
       return;
     }
 
@@ -213,7 +215,7 @@ export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfile
 
             <FormField
               control={form.control}
-              name="displayName"
+              name="slug"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Username</FormLabel>
@@ -231,7 +233,30 @@ export function BasicProfileStep({ initialData, onSubmit, onNext }: BasicProfile
                   </FormControl>
                   <FormMessage />
                   <p className="text-muted-foreground text-sm">
-                    3-20 characters, letters, numbers, and underscores only
+                    3-20 characters. Letters, numbers, underscores, and dashes allowed.
+                  </p>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Display Name <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="How you want your name to appear"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-muted-foreground text-sm">
+                    This is shown to other users instead of your username. Can include spaces, emoji, etc.
                   </p>
                 </FormItem>
               )}

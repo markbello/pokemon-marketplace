@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+import { slugSchema, displayNameSchema } from './validations-server';
+
+// Re-export server-safe schemas for client use
+export { slugSchema, displayNameSchema };
 
 /**
  * Validation schema for Step 1: Basic Profile
@@ -15,12 +19,8 @@ export const basicProfileSchema = z.object({
     .min(1, 'Last name is required')
     .max(50, 'Last name must be less than 50 characters')
     .trim(),
-  displayName: z
-    .string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(20, 'Username must be less than 20 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
-    .trim(),
+  slug: slugSchema,
+  displayName: displayNameSchema,
   phone: z
     .string()
     .optional()

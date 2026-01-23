@@ -35,10 +35,10 @@ export default function Navbar() {
               Browse
             </Link>
             <Link
-              href="/collection"
+              href="/collections"
               className={cn(
                 'hover:text-foreground text-sm font-medium transition-colors',
-                pathname?.startsWith('/collection')
+                pathname?.startsWith('/collections')
                   ? 'text-foreground'
                   : 'text-muted-foreground',
               )}
