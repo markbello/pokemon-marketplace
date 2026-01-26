@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         hostname: 'd1htnxwo4o0jhw.cloudfront.net',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
   },
 };

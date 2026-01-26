@@ -60,6 +60,15 @@ interface SellerStatus {
   } | null;
 }
 
+interface ListingCard {
+  id: string;
+  cardName: string | null;
+  setName: string | null;
+  cardNumber: string | null;
+  variety: string | null;
+  frontImageUrl: string | null;
+}
+
 interface Listing {
   id: string;
   sellerId: string;
@@ -71,6 +80,7 @@ interface Listing {
   imageUrl: string | null;
   psaCertNumber?: string | null;
   cardId?: string | null;
+  card?: ListingCard | null;
   createdAt: string;
   updatedAt: string;
   // Sale info (populated when SOLD)
@@ -722,6 +732,11 @@ function SellerDashboardContent() {
                 orderShippingCarrier: listing.orderShippingCarrier,
                 orderTrackingNumber: listing.orderTrackingNumber,
                 orderFulfillmentStatus: listing.orderFulfillmentStatus,
+                // Card details for collection-style title display
+                cardName: listing.card?.cardName || null,
+                setName: listing.card?.setName || null,
+                cardNumber: listing.card?.cardNumber || null,
+                variety: listing.card?.variety || null,
               }))}
               mode="seller"
               onEditListing={beginEditListing}

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, Truck, Pencil, ArrowUpRight } from 'lucide-react';
 import { ShippingModal } from './ShippingModal';
+import { SlabImage } from '@/components/cards/SlabImage';
 
 export interface OrderListingItem {
   id: string;
@@ -33,6 +34,11 @@ export interface OrderListingItem {
   orderTrackingNumber?: string | null;
   orderFulfillmentStatus?: string | null;
   isTestPayment?: boolean;
+  // Card details for collection-style display
+  cardName?: string | null;
+  setName?: string | null;
+  cardNumber?: string | null;
+  variety?: string | null;
 }
 
 interface OrdersListingsTableProps {
@@ -114,21 +120,47 @@ export function OrdersListingsTable({
 
               return (
                 <tr key={item.id} className="border-b last:border-0">
-                  {/* Title/Item */}
+                  {/* Title/Item with Thumbnail */}
                   <td className="py-2 pr-4">
-                    <div className="font-medium">{item.displayTitle}</div>
-                    {item.sellerNotes && (
-                      <div className="text-muted-foreground line-clamp-2 text-xs">
-                        {item.sellerNotes}
+                    <div className="flex items-center gap-3">
+                      {/* Thumbnail using SlabImage */}
+                      {item.imageUrl && (
+                        <div className="w-8 shrink-0">
+                          <SlabImage
+                            src={item.imageUrl}
+                            alt={item.cardName || item.displayTitle}
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        {/* Collection-style title: Card Name on top, then variety | set | number */}
+                        <div className="font-medium line-clamp-1">
+                          {item.cardName || item.displayTitle}
+                        </div>
+                        {item.cardName && (item.variety || item.setName || item.cardNumber) && (
+                          <div className="text-muted-foreground text-xs line-clamp-1">
+                            {item.variety && <span>{item.variety}</span>}
+                            {item.variety && (item.setName || item.cardNumber) && (
+                              <span className="mx-1">|</span>
+                            )}
+                            {item.setName && <span>{item.setName}</span>}
+                            {item.cardNumber && <span className="ml-1">#{item.cardNumber}</span>}
+                          </div>
+                        )}
+                        {item.sellerNotes && (
+                          <div className="text-muted-foreground line-clamp-1 text-xs">
+                            {item.sellerNotes}
+                          </div>
+                        )}
+                        {isSold && item.buyerOrSellerName && (
+                          <div className="mt-0.5 text-xs text-green-600">
+                            {mode === 'buyer'
+                              ? `Sold by ${item.buyerOrSellerName}`
+                              : `Sold to ${item.buyerOrSellerName}`}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {isSold && item.buyerOrSellerName && (
-                      <div className="mt-0.5 text-xs text-green-600">
-                        {mode === 'buyer'
-                          ? `Sold by ${item.buyerOrSellerName}`
-                          : `Sold to ${item.buyerOrSellerName}`}
-                      </div>
-                    )}
+                    </div>
                   </td>
 
                   {/* Price */}
