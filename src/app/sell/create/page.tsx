@@ -327,15 +327,6 @@ export default function CreateListingPage() {
     photoId: string,
     signature: UploadSignature
   ) => {
-    // #region debug log
-    console.log('[DEBUG] uploadPhotoToCloudinary - signature:', {
-      cloud_name: signature.cloud_name,
-      folder: signature.folder,
-      hasApiKey: !!signature.api_key,
-      hasSignature: !!signature.signature,
-    });
-    // #endregion
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('api_key', signature.api_key);
@@ -351,17 +342,6 @@ export default function CreateListingPage() {
     if (!response.ok) throw new Error('Upload failed');
     
     const result = await response.json();
-
-    // #region debug log
-    console.log('[DEBUG] Cloudinary upload result:', {
-      public_id: result.public_id,
-      secure_url: result.secure_url,
-      url: result.url,
-      format: result.format,
-      resource_type: result.resource_type,
-    });
-    // #endregion
-
     return {
       publicId: result.public_id as string,
       url: result.secure_url as string,
@@ -400,14 +380,6 @@ export default function CreateListingPage() {
       try {
         const result = await uploadPhotoToCloudinary(photo.file!, photo.id, signature);
         
-        // #region debug log
-        console.log('[DEBUG] Setting photo URL:', {
-          photoId: photo.id,
-          newUrl: result.url,
-          publicId: result.publicId,
-        });
-        // #endregion
-
         setAdditionalPhotos((prev) =>
           prev.map((p) =>
             p.id === photo.id
@@ -859,13 +831,13 @@ export default function CreateListingPage() {
                 {/* Uploaded photos */}
                 {additionalPhotos.map((photo) => (
                   <div key={photo.id} className="relative h-24 w-24 rounded-lg overflow-hidden bg-muted">
-                    {/* Use unoptimized for blob URLs (during upload), optimized for Cloudinary URLs */}
+                    {/* Always use unoptimized - blob URLs need it, and Cloudinary provides its own CDN/optimization */}
                     <Image
                       src={photo.url}
                       alt="Listing photo"
                       fill
                       className="object-cover"
-                      unoptimized={photo.url.startsWith('blob:')}
+                      unoptimized
                     />
                     {/* Loading overlay */}
                     {photo.uploading && (
