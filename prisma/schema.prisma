@@ -213,12 +213,28 @@ model Listing {
 
   // Orders created from this listing (single-item purchases)
   orders           Order[]
+  
+  // Additional photos uploaded by seller (PM-76)
+  photos           ListingPhoto[]
 
   @@index([sellerId, status])
   @@index([status, createdAt])
   @@index([cardId])
   @@index([psaCertNumber])
   @@index([gradingCertificateId])
+}
+
+// PM-76: Additional photos for listings (stored in Cloudinary)
+model ListingPhoto {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  publicId   String   // Cloudinary public_id
+  url        String   // Cloudinary secure_url
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([listingId])
 }
 
 // PM-65: Invitation codes for controlled launch

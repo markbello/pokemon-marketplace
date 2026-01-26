@@ -50,7 +50,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6">
           <Link
-            href="/account/seller"
+            href="/sell/create"
             className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-5 py-2 text-sm font-medium transition"
           >
             + Sell a card

@@ -24,6 +24,17 @@ export async function GET() {
       where: { sellerId: userId },
       orderBy: { createdAt: 'desc' },
       include: {
+        // Include card details for display
+        card: {
+          select: {
+            id: true,
+            cardName: true,
+            setName: true,
+            cardNumber: true,
+            variety: true,
+            frontImageUrl: true,
+          },
+        },
         // Include the order that purchased this listing (for SOLD items)
         orders: {
           where: { status: 'PAID' },
@@ -105,6 +116,8 @@ export async function POST(request: Request) {
       cardId,
       gradingCertificateId,
       slabCondition,
+      status: requestedStatus,
+      photos,
     } = body as {
       displayTitle?: string;
       askingPriceCents?: number;
@@ -114,12 +127,17 @@ export async function POST(request: Request) {
       psaCertNumber?: string;
       cardId?: string;
       gradingCertificateId?: string;
-      slabCondition?: 'MINT' | 'NEAR_MINT' | 'GOOD' | 'DAMAGED';
+      slabCondition?: 'MINT' | 'NEAR_MINT' | 'GOOD' | 'DAMAGED' | 'UNKNOWN';
+      status?: 'DRAFT' | 'PUBLISHED';
+      photos?: Array<{ publicId: string; url: string }>;
     };
 
-    // Validate slab condition is provided
-    const validSlabConditions = ['MINT', 'NEAR_MINT', 'GOOD', 'DAMAGED'];
-    if (!slabCondition || !validSlabConditions.includes(slabCondition)) {
+    // Determine if this is a draft save
+    const isDraft = requestedStatus === 'DRAFT';
+
+    // Validate slab condition (required for PUBLISHED, optional for DRAFT)
+    const validSlabConditions = ['MINT', 'NEAR_MINT', 'GOOD', 'DAMAGED', 'UNKNOWN'];
+    if (!isDraft && (!slabCondition || !validSlabConditions.includes(slabCondition))) {
       return NextResponse.json(
         { error: 'slabCondition is required and must be one of: MINT, NEAR_MINT, GOOD, DAMAGED' },
         { status: 400 },
@@ -237,20 +255,52 @@ export async function POST(request: Request) {
       resolvedImageUrl = card?.frontImageUrl ?? null;
     }
 
-    const listing = await prisma.listing.create({
-      data: {
-        sellerId: userId,
-        displayTitle: resolvedDisplayTitle || 'PSA Card',
-        askingPriceCents,
-        currency: currency.trim().toUpperCase(),
-        sellerNotes: sellerNotes?.trim() || null,
-        imageUrl: resolvedImageUrl,
-        cardId: resolvedCardId,
-        psaCertNumber: resolvedCertNumber,
-        gradingCertificateId: resolvedCertificateId,
-        slabCondition,
-        status: 'PUBLISHED', // Default to published - sellers can move to draft if needed
-      },
+    // Determine the listing status
+    const listingStatus = isDraft ? 'DRAFT' : 'PUBLISHED';
+
+    // Validate photos if provided
+    const validPhotos = Array.isArray(photos)
+      ? photos.filter((p) => p && typeof p.publicId === 'string' && typeof p.url === 'string')
+      : [];
+
+    // Create listing with photos in a transaction
+    const listing = await prisma.$transaction(async (tx) => {
+      const newListing = await tx.listing.create({
+        data: {
+          sellerId: userId,
+          displayTitle: resolvedDisplayTitle || 'PSA Card',
+          askingPriceCents,
+          currency: currency.trim().toUpperCase(),
+          sellerNotes: sellerNotes?.trim() || null,
+          imageUrl: resolvedImageUrl,
+          cardId: resolvedCardId,
+          psaCertNumber: resolvedCertNumber,
+          gradingCertificateId: resolvedCertificateId,
+          slabCondition:
+            slabCondition && validSlabConditions.includes(slabCondition)
+              ? (slabCondition as 'MINT' | 'NEAR_MINT' | 'GOOD' | 'DAMAGED')
+              : null,
+          status: listingStatus,
+        },
+      });
+
+      // Create listing photos if any
+      if (validPhotos.length > 0) {
+        await tx.listingPhoto.createMany({
+          data: validPhotos.map((photo, index) => ({
+            listingId: newListing.id,
+            publicId: photo.publicId,
+            url: photo.url,
+            sortOrder: index,
+          })),
+        });
+      }
+
+      // Return listing with photos
+      return tx.listing.findUnique({
+        where: { id: newListing.id },
+        include: { photos: { orderBy: { sortOrder: 'asc' } } },
+      });
     });
 
     // Auto-add to collection if not already there

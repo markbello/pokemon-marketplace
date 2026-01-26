@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SlabImage } from '@/components/cards/SlabImage';
 import type { ReactNode } from 'react';
 
 export interface CardTileData {
@@ -52,20 +53,7 @@ export function CardTile({ card, footer }: CardTileProps) {
               </span>
             </div>
           </div>
-          {card.frontImageUrl ? (
-            <div className="relative aspect-[63/88] w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={card.frontImageUrl}
-                alt={card.cardName || 'Card'}
-                className="h-full w-full rounded-sm object-contain"
-              />
-            </div>
-          ) : (
-            <div className="bg-muted/30 flex aspect-[63/88] w-full items-center justify-center">
-              <p className="text-muted-foreground text-center text-xs">No image</p>
-            </div>
-          )}
+          <SlabImage src={card.frontImageUrl} alt={card.cardName || 'Card'} />
         </div>
         <div className="flex flex-col gap-1.5 pt-1">
           <CardHeader className="space-y-0.5 px-0 pb-0 pt-0">
