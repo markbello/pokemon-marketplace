@@ -7,8 +7,9 @@ import {
   lookupPSACertificate,
   normalizePSACertNumber,
 } from '@/lib/psa-api';
+import type { ListingStatus, Prisma } from '@prisma/client';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth0 = await getAuth0Client();
     const session = await auth0.getSession();
@@ -19,10 +20,33 @@ export async function GET() {
 
     const userId = session.user.sub;
 
+    // Parse query params
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get('status'); // 'ALL', 'LIVE', 'DRAFT', 'PUBLISHED', 'SOLD'
+    const sortOrder = searchParams.get('sort') === 'oldest' ? 'asc' : 'desc';
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)));
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Prisma.ListingWhereInput = { sellerId: userId };
+    if (statusFilter && statusFilter !== 'ALL') {
+      // Map 'LIVE' to 'PUBLISHED' for user-friendly API
+      const dbStatus = statusFilter === 'LIVE' ? 'PUBLISHED' : statusFilter;
+      if (['DRAFT', 'PUBLISHED', 'SOLD'].includes(dbStatus)) {
+        where.status = dbStatus as ListingStatus;
+      }
+    }
+
+    // Fetch total count for pagination
+    const totalCount = await prisma.listing.count({ where });
+
     // Fetch listings with associated orders for sold items
     const listings = await prisma.listing.findMany({
-      where: { sellerId: userId },
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: { createdAt: sortOrder },
+      skip,
+      take: limit,
       include: {
         // Include card details for display
         card: {
@@ -34,6 +58,24 @@ export async function GET() {
             variety: true,
             frontImageUrl: true,
           },
+        },
+        // Include grading certificate for grade info
+        gradingCertificate: {
+          select: {
+            id: true,
+            gradingCompany: true,
+            certNumber: true,
+            grade: true,
+            gradeLabel: true,
+          },
+        },
+        // Include photos for image count
+        photos: {
+          select: {
+            id: true,
+            url: true,
+          },
+          orderBy: { sortOrder: 'asc' },
         },
         // Include the order that purchased this listing (for SOLD items)
         orders: {
@@ -59,11 +101,18 @@ export async function GET() {
     });
 
     // Transform to include soldAt and orderId for convenience
-    const listingsWithSaleInfo = listings.map((listing) => {
+    const listingsWithSaleInfo = listings.map((listing, index) => {
       const paidOrder = listing.orders[0];
+      // Count additional images (photos beyond the main image)
+      const photoCount = listing.photos?.length || 0;
       return {
         ...listing,
         orders: undefined, // Remove the raw orders array
+        photos: undefined, // Remove the raw photos array
+        // Index for display (1-based, accounting for pagination)
+        displayIndex: skip + index + 1,
+        // Photo count for "+N" badge (additional images beyond the main one)
+        additionalImageCount: photoCount > 0 ? photoCount : 0,
         // Sale info (only populated if SOLD)
         soldAt: paidOrder?.createdAt || null,
         orderId: paidOrder?.id || null,
@@ -76,7 +125,16 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ listings: listingsWithSaleInfo });
+    return NextResponse.json({
+      listings: listingsWithSaleInfo,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: page * limit < totalCount,
+      },
+    });
   } catch (error) {
     console.error('[SellerListings][GET] Error fetching listings:', error);
 
