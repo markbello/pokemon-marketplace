@@ -55,7 +55,7 @@ export default function EditListingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<'forbidden' | 'notfound' | null>(null);
-  const [existingListing, setExistingListing] = useState<ExistingListingData | null>(null);
+  const [existingListing, setExistingListing] = useState<ExistingListingData | undefined>(undefined);
 
   useEffect(() => {
     if (userLoading) return;
