@@ -8,6 +8,7 @@ import { AccountLayout } from '@/components/account/AccountLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthError } from '@/components/auth/AuthError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,16 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  OrdersListingsTable,
-  type OrderListingItem,
-} from '@/components/orders/OrdersListingsTable';
+import { OrdersListingsTable } from '@/components/orders/OrdersListingsTable';
 import {
   Loader2,
   CheckCircle2,
@@ -42,8 +34,6 @@ import {
   ExternalLink,
   Store,
   AlertCircle,
-  Pencil,
-  Package,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -136,9 +126,7 @@ function SellerDashboardContent() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isSavingListing, setIsSavingListing] = useState(false);
   const [isLookingUpCert, setIsLookingUpCert] = useState(false);
-  const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newListingPrice, setNewListingPrice] = useState('');
   const [newListingNotes, setNewListingNotes] = useState('');
   const [newListingCertNumber, setNewListingCertNumber] = useState('');
@@ -147,9 +135,6 @@ function SellerDashboardContent() {
   const [lookupCertificate, setLookupCertificate] = useState<LookupCertificate | null>(null);
   const [lookupPSAData, setLookupPSAData] = useState<LookupPSAData | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-  const [editStatus, setEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
 
   // Check if user returned from Stripe onboarding
   useEffect(() => {
@@ -342,94 +327,6 @@ function SellerDashboardContent() {
     }
   };
 
-  const beginEditListing = (item: OrderListingItem) => {
-    // Find the original listing
-    const listing = listings.find((l) => l.id === item.id);
-    if (!listing) return;
-
-    setEditingListing(listing);
-    setEditPrice((listing.askingPriceCents / 100).toString());
-    setEditNotes(listing.sellerNotes || '');
-    setEditStatus(listing.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT');
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingListing) return;
-
-    if (!editPrice) {
-      toast.error('Please enter a price');
-      return;
-    }
-
-    const parsedPrice = Number.parseFloat(editPrice);
-    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      toast.error('Price must be a non-negative number');
-      return;
-    }
-
-    const askingPriceCents = Math.round(parsedPrice * 100);
-
-    try {
-      setIsSavingListing(true);
-      const response = await fetch(`/api/seller/listings/${editingListing.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          askingPriceCents,
-          sellerNotes: editNotes || null,
-          status: editStatus,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update listing');
-      }
-
-      const data = (await response.json()) as { listing: Listing };
-      setListings((prev) => prev.map((l) => (l.id === data.listing.id ? data.listing : l)));
-      setEditingListing(null);
-      setIsEditDialogOpen(false);
-      toast.success('Listing updated');
-    } catch (error) {
-      console.error('Error updating listing:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update listing');
-    } finally {
-      setIsSavingListing(false);
-    }
-  };
-
-  const handleUpdateStatus = async (listing: Listing, nextStatus: 'DRAFT' | 'PUBLISHED') => {
-    try {
-      setIsSavingListing(true);
-      const response = await fetch(`/api/seller/listings/${listing.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update listing status');
-      }
-
-      const data = (await response.json()) as { listing: Listing };
-      setListings((prev) => prev.map((l) => (l.id === data.listing.id ? data.listing : l)));
-      toast.success(
-        nextStatus === 'PUBLISHED' ? 'Listing published' : 'Listing moved back to draft',
-      );
-    } catch (error) {
-      console.error('Error updating listing status:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update listing status');
-    } finally {
-      setIsSavingListing(false);
-    }
-  };
 
   // Handle starting onboarding
   const handleStartOnboarding = async () => {
@@ -508,10 +405,11 @@ function SellerDashboardContent() {
   if (!user) {
     return (
       <AccountLayout>
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Please log in to access the seller dashboard.</AlertDescription>
-        </Alert>
+        <AuthError
+          title="Seller Dashboard"
+          description="Please log in to access the seller dashboard."
+          loginReturnTo="/account/seller"
+        />
       </AccountLayout>
     );
   }
@@ -739,7 +637,6 @@ function SellerDashboardContent() {
                 variety: listing.card?.variety || null,
               }))}
               mode="seller"
-              onEditListing={beginEditListing}
               onShippingSuccess={fetchListings}
             />
           </CardContent>
@@ -959,77 +856,6 @@ function SellerDashboardContent() {
           </DialogContent>
         </Dialog>
 
-        {/* Edit listing modal */}
-        <Dialog
-          open={isEditDialogOpen}
-          onOpenChange={(open) => {
-            setIsEditDialogOpen(open);
-            if (!open) {
-              setEditingListing(null);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit listing</DialogTitle>
-              <DialogDescription>
-                Update the price, notes, or status for this listing.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 py-2">
-              <Input
-                placeholder="Price (USD)"
-                type="number"
-                min="0"
-                step="0.01"
-                value={editPrice}
-                onChange={(e) => setEditPrice(e.target.value)}
-              />
-              <textarea
-                placeholder="Notes"
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                className="border-input focus-visible:ring-ring bg-background placeholder:text-muted-foreground flex min-h-20 w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
-              />
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium">Status</span>
-                <select
-                  className="border-input bg-background flex h-9 items-center rounded-md border px-3 text-sm shadow-sm outline-none"
-                  value={editStatus}
-                  onChange={(e) =>
-                    setEditStatus(e.target.value === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT')
-                  }
-                >
-                  <option value="PUBLISHED">Published (visible to buyers)</option>
-                  <option value="DRAFT">Draft (not visible to buyers)</option>
-                </select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsEditDialogOpen(false);
-                  setEditingListing(null);
-                }}
-                disabled={isSavingListing}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEdit} disabled={isSavingListing || !editingListing}>
-                {isSavingListing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save changes'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </AccountLayout>
   );

@@ -64,10 +64,16 @@ async function processListingPurchase(params: {
   } = params;
 
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    // Fetch order with its associated listing
+    // Fetch order with its associated listing (including grading certificate info)
     const order = await tx.order.findUnique({
       where: { id: orderId },
-      include: { listing: true },
+      include: {
+        listing: {
+          include: {
+            gradingCertificate: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -94,7 +100,13 @@ async function processListingPurchase(params: {
             totalCents: taxInfo?.totalCents,
             updatedAt: new Date(),
           },
-          include: { listing: true },
+          include: {
+            listing: {
+              include: {
+                gradingCertificate: true,
+              },
+            },
+          },
         });
 
     // Create ORDER_CREATED event if this is a new paid order (not already paid)
@@ -125,7 +137,7 @@ async function processListingPurchase(params: {
       });
     }
 
-    // Mark listing as SOLD if:
+    // Mark listing as SOLD and transfer collection item if:
     // 1. Order is linked to a listing
     // 2. Listing exists and is still PUBLISHED (idempotency check)
     let listingUpdated = false;
@@ -136,6 +148,62 @@ async function processListingPurchase(params: {
       });
       listingUpdated = true;
       console.log('[Webhook] Listing marked as SOLD:', order.listingId);
+
+      // Transfer collection item from seller to buyer
+      const listing = order.listing;
+      if (listing.gradingCertificateId && listing.cardId) {
+        const sellerId = listing.sellerId;
+        const buyerId = order.buyerId;
+        const purchasePriceCents = taxInfo?.totalCents || order.totalCents;
+
+        // Find seller's collection item for this certificate
+        const sellerCollectionItem = await tx.collectionItem.findFirst({
+          where: {
+            userId: sellerId,
+            gradingCertificateId: listing.gradingCertificateId,
+            removedAt: null, // Only active items
+          },
+        });
+
+        if (sellerCollectionItem) {
+          // Mark seller's item as removed (sold)
+          await tx.collectionItem.update({
+            where: { id: sellerCollectionItem.id },
+            data: {
+              removedAt: new Date(),
+              removalReason: 'SOLD',
+            },
+          });
+          console.log('[Webhook] Seller collection item marked as SOLD:', sellerCollectionItem.id);
+        }
+
+        // Check if buyer already has this certificate in their collection
+        const buyerCollectionItem = await tx.collectionItem.findFirst({
+          where: {
+            userId: buyerId,
+            gradingCertificateId: listing.gradingCertificateId,
+            removedAt: null, // Only active items
+          },
+        });
+
+        if (!buyerCollectionItem) {
+          // Create new collection item for buyer
+          await tx.collectionItem.create({
+            data: {
+              userId: buyerId,
+              cardId: listing.cardId,
+              gradingCertificateId: listing.gradingCertificateId,
+              purchasePriceCents,
+              slabCondition: listing.slabCondition,
+            },
+          });
+          console.log('[Webhook] Collection item transferred to buyer:', buyerId);
+        } else {
+          console.log('[Webhook] Buyer already has this certificate in collection, skipping transfer');
+        }
+      } else {
+        console.log('[Webhook] Listing missing gradingCertificateId or cardId, skipping collection transfer');
+      }
     } else if (order.listingId && order.listing?.status === 'SOLD') {
       console.log('[Webhook] Listing already SOLD (idempotent):', order.listingId);
     }
