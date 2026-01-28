@@ -190,7 +190,7 @@ export default function MyMarketplacePage() {
 
   // Handle edit card
   const handleEditCard = (id: string) => {
-    router.push(`/sell/create?edit=${id}`);
+    router.push(`/listings/${id}/edit`);
   };
 
   // Handle sort change - refetch all with new sort

@@ -44,7 +44,6 @@ export interface OrderListingItem {
 interface OrdersListingsTableProps {
   items: OrderListingItem[];
   mode: 'buyer' | 'seller';
-  onEditListing?: (item: OrderListingItem) => void;
   onShippingSuccess?: () => void;
 }
 
@@ -61,7 +60,6 @@ function getTrackingUrl(carrier: string, trackingNumber: string): string {
 export function OrdersListingsTable({
   items,
   mode,
-  onEditListing,
   onShippingSuccess,
 }: OrdersListingsTableProps) {
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
@@ -363,9 +361,11 @@ export function OrdersListingsTable({
                               )}
                             </>
                           ) : (
-                            <DropdownMenuItem onClick={() => onEditListing?.(item)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit Listing
+                            <DropdownMenuItem asChild>
+                              <Link href={`/listings/${item.id}/edit`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit Listing
+                              </Link>
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthError, ForbiddenError } from '@/components/auth/AuthError';
 import {
   Table,
   TableBody,
@@ -100,40 +101,16 @@ export default function AdminInvitationCodesPage() {
   }
 
   if (!user) {
-    return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Please log in to access the admin dashboard.</AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <AuthError loginReturnTo="/admin/invitation-codes" />;
   }
 
   if (!isAdmin) {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="bg-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <AlertCircle className="text-muted-foreground h-8 w-8" />
-              </div>
-              <CardTitle className="text-2xl">Access Denied</CardTitle>
-              <CardDescription className="mt-2">
-                You don&apos;t have permission to access this page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="pt-4">
-                <Button variant="outline" className="w-full" onClick={() => router.push('/')}>
-                  Go to Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <ForbiddenError
+        title="Admin Access Required"
+        description="You need administrator privileges to access this page."
+        backHref="/"
+      />
     );
   }
 
